@@ -5,6 +5,7 @@ Digitaler Wochenplan mit To-do-Liste – eine einzelne HTML-Datei (`produktivita
 - **Kalender** Mo–Fr, 05:00–20:00 Uhr im 30-Minuten-Raster, Kategorien *Beruflich* und *Privat*
 - **To-dos** mit Priorität (Hoch/Mittel/Niedrig), Fälligkeitsdatum und Abhaken
 - **Einplanen**: To-do ins Raster ziehen (PC) oder Kalender-Symbol am To-do antippen (Handy)
+- **Zeitraum markieren** (wie Outlook): mit der Maus über die Zeit ziehen, Titel tippen, Enter. Doppelklick öffnet die Details
 - **Termine verschieben** per Drag & Drop, bearbeiten per Klick
 
 ## Speicherung

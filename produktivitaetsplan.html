@@ -108,6 +108,20 @@ button { cursor: pointer; }
 .ev.short { flex-direction: row; align-items: baseline; gap: 6px; white-space: nowrap; }
 .ev.short .ev-n { overflow: hidden; text-overflow: ellipsis; }
 .ev.done .ev-n { text-decoration: line-through; color: var(--muted); }
+.g-col.selecting { user-select: none; -webkit-user-select: none; }
+.selbox { position: absolute; left: 2px; right: 2px; z-index: 6; background: color-mix(in srgb, var(--beruf) 20%, transparent); border: 1px solid var(--beruf); border-radius: 4px; pointer-events: none; }
+.inline {
+  position: absolute; left: 2px; right: 2px; z-index: 7; display: grid; align-content: start; gap: 5px; padding: 6px; cursor: default;
+  background: var(--surface); border: 1px solid var(--line-strong); border-left: 3px solid var(--c); border-radius: 5px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+}
+.inline .it { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.inline input { width: 100%; min-width: 0; padding: 5px 7px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--bg); font-size: 14px; }
+.inline .ib { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 4px; }
+.inline .ib button { padding: 3px 4px; overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.inline .ib button:hover { background: var(--sunk); }
+.inline .ib .ib-cat { color: var(--c); border-color: var(--c); }
+.inline .ib .ib-ok { background: var(--fg); color: var(--bg); border-color: var(--fg); padding-inline: 8px; }
 .drop { position: absolute; left: 2px; right: 2px; z-index: 3; border: 2px dashed var(--fg); border-radius: 4px; opacity: .45; pointer-events: none; }
 .now { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger); z-index: 4; pointer-events: none; }
 .now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
@@ -234,7 +248,7 @@ textarea.field { resize: vertical; min-height: 60px; }
     <div class="legend">
       <span class="cat-beruf"><i></i>Beruflich</span>
       <span class="cat-privat"><i></i>Privat</span>
-      <span>Leeres Feld anklicken = neuer Termin · To-do ins Raster ziehen = einplanen</span>
+      <span>Zeitraum markieren, Titel tippen, Enter · Doppelklick = Details · To-do ins Raster ziehen = einplanen</span>
     </div>
   </section>
 
@@ -407,7 +421,7 @@ textarea.field { resize: vertical; min-height: 60px; }
         store.cols[kind].onSnapshot((snap) => {
           S[kind] = new Map(snap.docs.map((d) => [d.id, d.data()]));
           setSync("cloud");
-          if (!S.drag) render();
+          if (!S.drag && !S.selDrag) render();
         }, onErr);
       }
     } catch (e) { setSync("local"); }
@@ -447,6 +461,7 @@ textarea.field { resize: vertical; min-height: 60px; }
   }
 
   function renderCal() {
+    const hadFocus = document.activeElement && document.activeElement.id === "inlineTitle";
     const days = weekDays();
     const todayIso = iso(new Date());
     $("kwLabel").textContent = "KW " + isoWeek(S.week);
@@ -482,6 +497,49 @@ textarea.field { resize: vertical; min-height: 60px; }
     }).join("");
 
     $("grid").innerHTML = `${head}<div class="g-body"><div class="g-times">${times}</div>${cols}</div>`;
+    renderSel(hadFocus);
+  }
+
+  // ---------- Zeitraum markieren + direkt eintragen (wie Outlook) ----------
+  function renderSel(focus) {
+    $("grid").querySelectorAll(".selbox, .inline").forEach((n) => n.remove());
+    const s = S.sel; if (!s) return;
+    const col = $("grid").querySelector(`.g-col[data-date="${s.date}"]`); if (!col) return;
+    const top = (s.start - START) / STEP * SLOT, h = (s.end - s.start) / STEP * SLOT;
+    const box = document.createElement("div");
+    box.className = "selbox"; box.style.top = top + "px"; box.style.height = h + "px";
+    col.appendChild(box);
+    if (!s.editing) return;
+    const ed = document.createElement("div");
+    ed.className = "inline cat-" + s.cat;
+    ed.style.top = Math.min(top, 30 * SLOT - 96) + "px";
+    ed.style.minHeight = h + "px";
+    ed.innerHTML = `<span class="it">${hm(s.start)}–${hm(s.end)}</span>
+      <input id="inlineTitle" placeholder="Titel eingeben …" aria-label="Titel des neuen Termins" autocomplete="off">
+      <div class="ib"><button type="button" class="ib-cat" title="Kategorie wechseln">${CAT[s.cat]}</button><button type="button" class="ib-more">Details</button><button type="button" class="ib-ok" aria-label="Speichern">✓</button></div>`;
+    col.appendChild(ed);
+    const inp = ed.querySelector("input");
+    inp.value = s.text;
+    if (focus) inp.focus();
+  }
+  function setSel(date, a, b) {
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    S.sel = { date, start: START + lo * STEP, end: START + (hi + 1) * STEP, text: "", cat: S.sel ? S.sel.cat : "beruf", editing: false };
+    renderSel();
+  }
+  function editSel() { if (S.sel) { S.sel.editing = true; renderSel(true); } }
+  function cancelSel() { S.sel = null; renderSel(); }
+  function commitSel() {
+    const s = S.sel; if (!s) return;
+    S.sel = null;
+    const title = s.text.trim();
+    if (!title) { renderSel(); return; }
+    store.put("events", { id: uid(), title, date: s.date, start: s.start, end: s.end, cat: s.cat, note: "" });
+  }
+  function selDetails() {
+    const s = S.sel; if (!s) return;
+    S.sel = null; renderSel();
+    openEvent({ title: s.text.trim(), date: s.date, start: s.start, end: s.end, cat: s.cat });
   }
 
   // ---------- To-dos ----------
@@ -685,12 +743,66 @@ textarea.field { resize: vertical; min-height: 60px; }
   // Klick ins Raster: neuer Termin / bestehenden öffnen
   const grid = $("grid");
   const slotAt = (col, clientY) => START + Math.floor((clientY - col.getBoundingClientRect().top) / SLOT) * STEP;
+  const slotIdx = (col, y) => clamp(Math.floor((y - col.getBoundingClientRect().top) / SLOT), 0, (END - START) / STEP - 1);
+  let mouseSelDone = false;
+
+  // Maus: gedrückt halten und ziehen markiert einen Zeitraum
+  grid.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".inline")) return;
+    const date = e.target.closest(".g-col")?.dataset.date;
+    if (S.sel) commitSel(); // Klick daneben speichert Eingetipptes (wie Outlook); rendert das Raster neu
+    if (e.pointerType !== "mouse" || e.button !== 0 || e.target.closest(".ev") || !date) return;
+    const col = grid.querySelector(`.g-col[data-date="${date}"]`); if (!col) return;
+    e.preventDefault();
+    const a = slotIdx(col, e.clientY);
+    S.selDrag = { col, date: col.dataset.date, a, b: a };
+    col.classList.add("selecting");
+    col.setPointerCapture(e.pointerId);
+    setSel(col.dataset.date, a, a);
+  });
+  grid.addEventListener("pointermove", (e) => {
+    const d = S.selDrag; if (!d) return;
+    const b = slotIdx(d.col, e.clientY);
+    if (b !== d.b) { d.b = b; setSel(d.date, d.a, b); }
+  });
+  grid.addEventListener("pointerup", () => {
+    const d = S.selDrag; if (!d) return;
+    S.selDrag = null; d.col.classList.remove("selecting");
+    mouseSelDone = true;
+    editSel();
+  });
+  grid.addEventListener("pointercancel", () => { if (S.selDrag) { S.selDrag.col.classList.remove("selecting"); S.selDrag = null; cancelSel(); } });
+
   grid.addEventListener("click", (e) => {
+    const ed = e.target.closest(".inline");
+    if (ed) {
+      if (e.target.closest(".ib-cat")) { S.sel.cat = S.sel.cat === "beruf" ? "privat" : "beruf"; renderSel(true); }
+      else if (e.target.closest(".ib-more")) selDetails();
+      else if (e.target.closest(".ib-ok")) commitSel();
+      return;
+    }
     const evEl = e.target.closest(".ev");
     if (evEl) { const ev = S.events.get(evEl.dataset.id); if (ev) openEvent(ev); return; }
+    if (mouseSelDone) { mouseSelDone = false; return; }
+    // Touch: Tippen markiert 30 Minuten und öffnet die Eingabe
     const col = e.target.closest(".g-col"); if (!col) return;
-    const start = clamp(slotAt(col, e.clientY), START, END - STEP);
-    openEvent({ date: col.dataset.date, start, end: Math.min(start + 60, END), cat: "beruf" });
+    const a = slotIdx(col, e.clientY);
+    setSel(col.dataset.date, a, a);
+    editSel();
+  });
+  grid.addEventListener("dblclick", (e) => {
+    if (e.target.closest("input") || e.target.closest(".ev") || e.target.closest(".ib")) return;
+    if (S.sel) selDetails();
+  });
+  grid.addEventListener("input", (e) => { if (e.target.id === "inlineTitle" && S.sel) S.sel.text = e.target.value; });
+  grid.addEventListener("keydown", (e) => {
+    if (e.target.id !== "inlineTitle") return;
+    if (e.key === "Enter") { e.preventDefault(); commitSel(); }
+    else if (e.key === "Escape") { e.preventDefault(); cancelSel(); }
+  });
+  // Klick außerhalb des Kalenders: Eingetipptes speichern, sonst Markierung verwerfen
+  document.addEventListener("pointerdown", (e) => {
+    if (S.sel && !grid.contains(e.target) && !evDlg.open) commitSel();
   });
 
   // ---------- Drag & Drop ----------
@@ -744,6 +856,6 @@ textarea.field { resize: vertical; min-height: 60px; }
   store.loadLocal();
   render();
   connect();
-  setInterval(() => { if (!S.drag && !evDlg.open && !tdDlg.open) renderCal(); }, 60000);
+  setInterval(() => { if (!S.drag && !S.selDrag && !evDlg.open && !tdDlg.open) renderCal(); }, 60000);
 })();
 </script>
