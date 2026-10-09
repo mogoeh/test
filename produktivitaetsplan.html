@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: Kopfzeile mit KW, darunter Wochenraster Mo–Fr (links) und To-do-Spalte (rechts); auf dem Handy Tabs + Tagesansicht */
+/* Layout: Kopfzeile mit KW + Wochenbilanz, darunter Wochenraster Mo–Fr mit Ganztags-Zeile (links) und Ziele/To-dos (rechts); Handy: Tabs + Tagesansicht */
 :root {
   --bg: #f3f4f1;
   --surface: #ffffff;
@@ -12,27 +12,31 @@
   --muted: #5f6964;
   --line: #e3e6e1;
   --line-strong: #c3c9c3;
-  --beruf: #2f5f8f;
-  --privat: #3c7a4a;
   --mark: #d99e00;
   --danger: #b42318;
   --warn: #9a5800;
+  --oof: #8a2f8a;
+  --c1: #2f5f8f; --c2: #3c7a4a; --c3: #b5651d; --c4: #6b4fa0;
+  --c5: #b0303a; --c6: #1f7a7a; --c7: #8a6d1f; --c8: #5c6670;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --slot: 26px;
+  --gut: 52px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #121614; --surface: #1a1f1d; --sunk: #222826; --fg: #e4e9e6; --muted: #9aa39f;
-    --line: #262d2a; --line-strong: #3a433f; --beruf: #7fa9d8; --privat: #7cc08b;
-    --mark: #f0c02a; --danger: #f0796e; --warn: #e3a54a; color-scheme: dark;
+    --line: #262d2a; --line-strong: #3a433f; --mark: #f0c02a; --danger: #f0796e; --warn: #e3a54a; --oof: #d690d6;
+    --c1: #7fa9d8; --c2: #7cc08b; --c3: #e39a5b; --c4: #b39ae0; --c5: #ec8088; --c6: #6cc5c2; --c7: #d6b85c; --c8: #a3adb6;
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #121614; --surface: #1a1f1d; --sunk: #222826; --fg: #e4e9e6; --muted: #9aa39f;
-  --line: #262d2a; --line-strong: #3a433f; --beruf: #7fa9d8; --privat: #7cc08b;
-  --mark: #f0c02a; --danger: #f0796e; --warn: #e3a54a; color-scheme: dark;
+  --line: #262d2a; --line-strong: #3a433f; --mark: #f0c02a; --danger: #f0796e; --warn: #e3a54a; --oof: #d690d6;
+  --c1: #7fa9d8; --c2: #7cc08b; --c3: #e39a5b; --c4: #b39ae0; --c5: #ec8088; --c6: #6cc5c2; --c7: #d6b85c; --c8: #a3adb6;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -43,20 +47,31 @@ body {
 }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--beruf); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
 
 /* ---------- Kopfzeile ---------- */
-.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 16px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 10px; }
 .brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
 .kw { font-family: var(--font-display); font-weight: 700; font-size: 34px; letter-spacing: .01em; line-height: 1; }
 .range { color: var(--muted); font-variant-numeric: tabular-nums; }
-.nav { display: flex; gap: 6px; }
-.nav button { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 5px; padding: 6px 12px; min-width: 38px; }
-.nav button:hover { background: var(--sunk); }
-.sync { margin-left: auto; font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.nbtn { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 5px; padding: 6px 12px; min-width: 38px; height: 34px; }
+.nbtn:hover { background: var(--sunk); }
+.jump { height: 34px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 5px; padding: 4px 8px; font-size: 13.5px; }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.sync { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 .sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
-.sync[data-state="cloud"]::before { background: var(--privat); }
+.sync[data-state="cloud"]::before { background: var(--c2); }
 .sync[data-state="local"]::before { background: var(--mark); }
+.gear { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; }
+.gear svg { width: 18px; height: 18px; }
+
+/* Wochenbilanz */
+.stats { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin-bottom: 14px; font-size: 13.5px; color: var(--muted); }
+.stats b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stats .st-cat { display: inline-flex; align-items: center; gap: 6px; }
+.stats .st-cat i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
+.stats .hint { margin-left: auto; font-size: 12.5px; }
 
 /* ---------- Tabs (nur Handy) ---------- */
 .tabs { display: none; gap: 6px; margin-bottom: 12px; }
@@ -69,19 +84,29 @@ button { cursor: pointer; }
 /* ---------- Kalender ---------- */
 .daypick { display: none; gap: 6px; margin-bottom: 10px; }
 .daypick button { flex: 1; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 5px; padding: 6px 2px; display: grid; gap: 1px; line-height: 1.15; }
-.daypick button .dn { font-weight: 600; font-size: 13px; }
-.daypick button .dd { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.daypick .dn { font-weight: 600; font-size: 13px; }
+.daypick .dd { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 .daypick button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .daypick button[aria-pressed="true"] .dd { color: var(--bg); }
 .daypick button.today:not([aria-pressed="true"]) { border-color: var(--mark); }
 
-.grid { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; overflow: clip; }
-.g-head, .g-body { display: grid; grid-template-columns: 52px repeat(5, minmax(0, 1fr)); }
-.g-head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line-strong); }
-.g-day { padding: 8px 10px 9px; border-left: 1px solid var(--line); position: relative; }
+.grid { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; overflow: clip; touch-action: pan-y; }
+.g-sticky { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 8; background: var(--surface); border-bottom: 1px solid var(--line-strong); }
+.g-row, .g-body, .g-all { display: grid; }
+.g-day { padding: 8px 10px 7px; border-left: 1px solid var(--line); position: relative; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .g-day .dn { font-family: var(--font-display); font-weight: 600; font-size: 17px; letter-spacing: .03em; text-transform: uppercase; }
-.g-day .dd { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-left: 6px; }
+.g-day .dd { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.g-day .due { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--warn); white-space: nowrap; }
 .g-day.today::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--mark); }
+
+/* Ganztags-Zeile */
+.g-all { border-top: 1px solid var(--line); gap: 2px 0; padding-block: 3px; }
+.a-lbl { grid-column: 1; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding: 5px 4px 0 6px; line-height: 1.1; }
+.a-cell { border-left: 1px solid var(--line); margin-block: -3px; cursor: cell; }
+.a-cell.over { background: color-mix(in srgb, var(--c1) 12%, transparent); }
+.a-sel { position: relative; z-index: 3; padding-inline: 2px; }
+.a-sel .inline { position: relative; left: auto; right: auto; top: auto; }
+
 .g-times { position: relative; height: calc(var(--slot) * 30); }
 .g-times span { position: absolute; right: 8px; transform: translateY(-50%); font-family: var(--font-mono); font-size: 11px; color: var(--muted); background: var(--surface); padding-inline: 2px; }
 .g-times span:first-child { transform: none; top: 2px !important; }
@@ -92,58 +117,95 @@ button { cursor: pointer; }
 }
 .g-col.today { background-color: color-mix(in srgb, var(--mark) 6%, var(--surface)); }
 .g-col.past { background-color: color-mix(in srgb, var(--sunk) 55%, var(--surface)); }
+.grid.busy, .grid.busy * { user-select: none; -webkit-user-select: none; }
 
+/* Termine: Farbe = Kategorie, Randleiste/Fläche = "Anzeigen als" (wie Outlook) */
 .ev {
-  position: absolute; z-index: 2; border-radius: 4px; padding: 2px 6px 3px; overflow: hidden;
+  position: absolute; z-index: 2; border-radius: 4px; padding: 2px 6px 3px 9px; overflow: hidden;
   background: color-mix(in srgb, var(--c) 15%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); border-left: 3px solid var(--c);
+  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
   font-size: 13px; line-height: 1.25; cursor: grab; display: flex; flex-direction: column; gap: 1px;
 }
+.ev::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c); }
 .ev:hover { background: color-mix(in srgb, var(--c) 24%, var(--surface)); }
+.ev.st-tentative { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--c) 10%, var(--surface)) 0 6px, color-mix(in srgb, var(--c) 22%, var(--surface)) 6px 12px); border-style: dashed; }
+.ev.st-tentative::before { background: repeating-linear-gradient(var(--c) 0 5px, transparent 5px 9px); }
+.ev.st-oof::before { background: var(--oof); width: 5px; }
+.ev.st-oof { border-color: color-mix(in srgb, var(--oof) 45%, transparent); }
+.ev.st-elsewhere::before { background: repeating-linear-gradient(var(--c) 0 2px, transparent 2px 5px); }
+.ev.st-free { background: var(--surface); border-style: dashed; }
+.ev.st-free::before { background: transparent; border-right: 2px solid color-mix(in srgb, var(--c) 50%, transparent); }
 .ev.dragging { opacity: .4; }
-.cat-beruf { --c: var(--beruf); }
-.cat-privat { --c: var(--privat); }
-.ev-t { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.ev-t { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ev-n { font-weight: 500; overflow-wrap: anywhere; }
+.ev-l { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ev.short { flex-direction: row; align-items: baseline; gap: 6px; white-space: nowrap; }
 .ev.short .ev-n { overflow: hidden; text-overflow: ellipsis; }
 .ev.done .ev-n { text-decoration: line-through; color: var(--muted); }
-.g-col.selecting { user-select: none; -webkit-user-select: none; }
-.selbox { position: absolute; left: 2px; right: 2px; z-index: 6; background: color-mix(in srgb, var(--beruf) 20%, transparent); border: 1px solid var(--beruf); border-radius: 4px; pointer-events: none; }
+.ev .rz { position: absolute; left: 0; right: 0; bottom: 0; height: 7px; cursor: ns-resize; touch-action: none; }
+.ev .rz::after { content: ""; position: absolute; left: 50%; bottom: 2px; width: 18px; height: 2px; margin-left: -9px; border-radius: 1px; background: var(--c); opacity: 0; }
+.ev:hover .rz::after { opacity: .7; }
+.ev.ad { position: relative; z-index: 2; margin-inline: 2px; height: 24px; flex-direction: row; align-items: center; gap: 6px; white-space: nowrap; padding-block: 0; }
+.ev.ad .ev-n { overflow: hidden; text-overflow: ellipsis; }
+.ev.ad .ev-t { flex: none; }
+.ev.ad.st-free { background: color-mix(in srgb, var(--c) 7%, var(--surface)); }
+.ev.ad.cont-l { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.ev.ad.cont-r { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+
+.selbox { position: absolute; left: 2px; right: 2px; z-index: 6; background: color-mix(in srgb, var(--c1) 20%, transparent); border: 1px solid var(--c1); border-radius: 4px; pointer-events: none; }
+.selbox.a { position: relative; left: auto; right: auto; margin-inline: 2px; min-height: 24px; }
 .inline {
-  position: absolute; left: 2px; right: 2px; z-index: 7; display: grid; align-content: start; gap: 5px; padding: 6px; cursor: default;
-  background: var(--surface); border: 1px solid var(--line-strong); border-left: 3px solid var(--c); border-radius: 5px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+  position: absolute; left: 2px; right: 2px; z-index: 7; display: grid; align-content: start; gap: 5px; padding: 6px 6px 6px 9px; cursor: default;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 5px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18); overflow: hidden;
 }
+.inline::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c); }
 .inline .it { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 .inline input { width: 100%; min-width: 0; padding: 5px 7px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--bg); font-size: 14px; }
-.inline .ib { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 4px; }
-.inline .ib button { padding: 3px 4px; overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.inline .ib { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px; }
+.inline .ib > * { padding: 3px 5px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); font-size: 12px; font-weight: 600; min-width: 0; }
 .inline .ib button:hover { background: var(--sunk); }
-.inline .ib .ib-cat { color: var(--c); border-color: var(--c); }
 .inline .ib .ib-ok { background: var(--fg); color: var(--bg); border-color: var(--fg); padding-inline: 8px; }
 .drop { position: absolute; left: 2px; right: 2px; z-index: 3; border: 2px dashed var(--fg); border-radius: 4px; opacity: .45; pointer-events: none; }
 .now { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger); z-index: 4; pointer-events: none; }
 .now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13px; color: var(--muted); }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend i { width: 12px; height: 12px; border-radius: 3px; background: color-mix(in srgb, var(--c) 30%, var(--surface)); border-left: 3px solid var(--c); }
 
-/* ---------- To-dos ---------- */
-.todos { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 14px; display: grid; gap: 12px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto; }
-.todos h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: .01em; display: flex; align-items: baseline; gap: 8px; }
-.todos h2 small { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 400; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { position: relative; width: 22px; height: 12px; border-radius: 2px; border: 1px solid var(--line-strong); background: var(--surface); overflow: hidden; --c: var(--c8); }
+.legend i::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c); }
+.legend i.st-tentative { background: repeating-linear-gradient(135deg, var(--surface) 0 3px, color-mix(in srgb, var(--c) 30%, var(--surface)) 3px 6px); border-style: dashed; }
+.legend i.st-tentative::before { background: repeating-linear-gradient(var(--c) 0 3px, transparent 3px 5px); }
+.legend i.st-oof::before { background: var(--oof); }
+.legend i.st-elsewhere::before { background: repeating-linear-gradient(var(--c) 0 2px, transparent 2px 4px); }
+.legend i.st-free { border-style: dashed; }
+.legend i.st-free::before { background: transparent; }
+.legend i.st-busy { background: color-mix(in srgb, var(--c) 18%, var(--surface)); }
+
+/* ---------- Seitenleiste ---------- */
+.side { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto; }
+.panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 14px; display: grid; gap: 10px; }
+.panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: .01em; display: flex; align-items: baseline; gap: 8px; }
+.panel h2 small { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 400; }
+.goals textarea { width: 100%; min-height: 84px; resize: vertical; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--bg); line-height: 1.45; }
+.goal-state { font-size: 12px; color: var(--muted); min-height: 1em; }
 .add { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .add-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .add-row .btn { grid-column: 1 / -1; }
 .field, .add input, .add select { width: 100%; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--bg); min-width: 0; }
 .add-row select, .add-row input { padding: 6px 6px; font-size: 13.5px; }
-.btn { padding: 7px 14px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); font-weight: 600; }
+.btn { padding: 7px 14px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .btn:hover { background: var(--sunk); }
 .btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .btn.primary:hover { opacity: .88; }
 .btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
 .btn.danger.armed { background: var(--danger); color: var(--surface); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 5px; }
+.filters button { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 99px; padding: 2px 10px; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.filters button i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+.filters button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .td {
@@ -154,14 +216,14 @@ button { cursor: pointer; }
 .td.p1 { --pc: var(--danger); }
 .td.p2 { --pc: var(--warn); }
 .td.p3 { --pc: var(--line-strong); }
-.td.done { opacity: .62; }
+.td.done { opacity: .62; cursor: default; }
 .td.done .td-title { text-decoration: line-through; }
 .chk { width: 20px; height: 20px; border: 2px solid var(--line-strong); border-radius: 4px; background: transparent; padding: 0; display: grid; place-items: center; margin-top: 1px; }
 .chk svg { width: 13px; height: 13px; stroke: var(--surface); opacity: 0; }
 .chk[aria-checked="true"] { background: var(--fg); border-color: var(--fg); }
 .chk[aria-checked="true"] svg { opacity: 1; }
 .td-title { all: unset; cursor: pointer; font-weight: 500; overflow-wrap: anywhere; }
-.td-title:focus-visible { outline: 2px solid var(--beruf); outline-offset: 2px; border-radius: 2px; }
+.td-title:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; border-radius: 2px; }
 .td-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; font-size: 12.5px; color: var(--muted); }
 .td-meta .prio { font-weight: 600; color: var(--pc); }
 .td.p3 .td-meta .prio { color: var(--muted); }
@@ -175,48 +237,62 @@ button { cursor: pointer; }
 .td-plan svg { width: 16px; height: 16px; }
 .empty { color: var(--muted); font-size: 14px; padding: 14px 4px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 5px; }
 .done-toggle { all: unset; cursor: pointer; font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-.done-toggle:focus-visible { outline: 2px solid var(--beruf); outline-offset: 2px; }
+.done-toggle:focus-visible { outline: 2px solid var(--c1); outline-offset: 2px; }
 .hint { font-size: 12.5px; color: var(--muted); margin: 0; }
 
 /* ---------- Dialoge ---------- */
-dialog { border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--fg); padding: 0; width: min(440px, calc(100vw - 32px)); }
+dialog { border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--fg); padding: 0; width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 32px); }
 dialog::backdrop { background: rgba(10, 14, 12, .45); }
 .dlg { display: grid; gap: 12px; padding: 18px; }
 .dlg h3 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; }
-.dlg label.lbl { display: grid; gap: 4px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.dlg h4 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.dlg label.lbl { display: grid; gap: 4px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); flex: 1; min-width: 0; }
 .dlg label.lbl > * { text-transform: none; letter-spacing: normal; font-weight: 400; font-size: 15px; color: var(--fg); }
-.dlg .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.dlg .flex { display: flex; gap: 8px; flex-wrap: wrap; }
+.dlg .flex > .lbl { min-width: 110px; }
 .dlg .row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.seg { display: flex; gap: 6px; }
-.seg label { flex: 1; }
+.chkline { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; cursor: pointer; }
+.chkline input { width: 17px; height: 17px; accent-color: var(--fg); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg label { flex: 1 1 auto; position: relative; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
-.seg span { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px; border: 1px solid var(--line-strong); border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 14px; }
-.seg span::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
-.seg input:checked + span { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--surface)); }
-.seg input:focus-visible + span { outline: 2px solid var(--beruf); outline-offset: 2px; }
+.seg span { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.seg.cats span::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.seg input:checked + span { border-color: var(--c, var(--fg)); background: color-mix(in srgb, var(--c, var(--fg)) 14%, var(--surface)); }
+.seg input:focus-visible + span { outline: 2px solid var(--c1); outline-offset: 2px; }
+.scope { padding: 8px 10px; background: var(--sunk); border-radius: 5px; display: grid; gap: 6px; font-size: 14px; }
+.scope .seg span { font-size: 13.5px; }
 .link-todo { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 8px 10px; background: var(--sunk); border-radius: 5px; }
 .err { color: var(--danger); font-size: 13.5px; margin: 0; min-height: 1em; }
 .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .actions .btn.danger { margin-right: auto; }
 textarea.field { resize: vertical; min-height: 60px; }
+.catlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.catlist li { display: grid; grid-template-columns: 14px minmax(0, 1fr) 110px 34px; gap: 8px; align-items: center; }
+.catlist .sw { width: 14px; height: 14px; border-radius: 3px; background: var(--c); }
+.catlist .field { padding: 6px 8px; }
+.catlist .cdel { height: 32px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 5px; color: var(--muted); }
+.catlist .cdel:hover { color: var(--danger); }
+.dlg section { display: grid; gap: 8px; padding-top: 4px; }
 
-.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 6px; font-size: 14px; z-index: 50; max-width: calc(100vw - 32px); }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 10px 8px 14px; border-radius: 6px; font-size: 14px; z-index: 50; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 12px; }
+.toast button { border: 1px solid color-mix(in srgb, var(--bg) 40%, transparent); background: transparent; color: var(--bg); border-radius: 4px; padding: 3px 9px; font-weight: 600; font-size: 13px; }
 
 /* ---------- Handy ---------- */
 @media (max-width: 760px) {
+  :root { --gut: 46px; }
   body { padding-inline: 16px; }
   .kw { font-size: 28px; }
-  .sync { margin-left: 0; width: 100%; }
+  .top-right { margin-left: 0; width: 100%; justify-content: space-between; }
+  .stats .hint { display: none; }
   .tabs { display: flex; }
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .layout[data-tab="cal"] .todos { display: none; }
+  .layout[data-tab="cal"] .side { display: none; }
   .layout[data-tab="todo"] .cal { display: none; }
-  .todos { position: static; max-height: none; }
+  .side { position: static; max-height: none; overflow: visible; }
   .daypick { display: flex; }
-  .g-head, .g-body { grid-template-columns: 46px minmax(0, 1fr); }
-  .g-day:not(.sel), .g-col:not(.sel) { display: none; }
   .add-row { grid-template-columns: 1fr 1fr; }
-  .add-row .btn { grid-column: 1 / -1; }
+  .catlist li { grid-template-columns: 14px minmax(0, 1fr) 92px 34px; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .ev, .td, .btn { transition: background-color .12s, border-color .12s; }
@@ -229,71 +305,113 @@ textarea.field { resize: vertical; min-height: 60px; }
     <span class="range" id="rangeLabel"></span>
   </div>
   <div class="nav">
-    <button id="prevWeek" aria-label="Vorige Woche">‹</button>
-    <button id="todayBtn">Diese Woche</button>
-    <button id="nextWeek" aria-label="Nächste Woche">›</button>
+    <button class="nbtn" id="prevWeek" aria-label="Vorige Woche" title="Vorige Woche (←)">‹</button>
+    <button class="nbtn" id="todayBtn" title="Diese Woche (T)">Heute</button>
+    <button class="nbtn" id="nextWeek" aria-label="Nächste Woche" title="Nächste Woche (→)">›</button>
+    <input class="jump" type="date" id="jump" aria-label="Zu Datum springen" title="Zu Datum springen">
   </div>
-  <span class="sync" id="syncState" data-state="wait">Verbinde …</span>
+  <div class="top-right">
+    <span class="sync" id="syncState" data-state="wait">Verbinde …</span>
+    <button class="nbtn" id="openSettings" title="Kategorien & Datensicherung">Einstellungen</button>
+  </div>
 </div>
+<div class="stats" id="stats"></div>
 
 <nav class="tabs" id="tabs">
   <button data-tab="cal" aria-pressed="true">Kalender</button>
-  <button data-tab="todo" aria-pressed="false">To-dos <span id="tabCount"></span></button>
+  <button data-tab="todo" aria-pressed="false">Ziele & To-dos <span id="tabCount"></span></button>
 </nav>
 
 <main class="layout" id="layout" data-tab="cal">
   <section class="cal" aria-label="Wochenkalender">
     <div class="daypick" id="dayPick"></div>
     <div class="grid" id="grid"></div>
-    <div class="legend">
-      <span class="cat-beruf"><i></i>Beruflich</span>
-      <span class="cat-privat"><i></i>Privat</span>
-      <span>Zeitraum markieren, Titel tippen, Enter · Doppelklick = Details · To-do ins Raster ziehen = einplanen</span>
+    <div class="legend" id="legend">
+      <span><i class="st-busy"></i>Gebucht</span>
+      <span><i class="st-tentative"></i>Mit Vorbehalt</span>
+      <span><i class="st-oof"></i>Außer Haus</span>
+      <span><i class="st-elsewhere"></i>An anderem Ort tätig</span>
+      <span><i class="st-free"></i>Frei</span>
     </div>
   </section>
 
-  <aside class="todos" aria-label="To-do-Liste">
-    <h2>To-dos <small id="openCount"></small></h2>
-    <form class="add" id="addForm" autocomplete="off">
-      <input id="addTitle" placeholder="Neues To-do …" aria-label="Neues To-do" required>
-      <div class="add-row">
-        <select id="addPrio" aria-label="Priorität">
-          <option value="1">Hoch</option>
-          <option value="2" selected>Mittel</option>
-          <option value="3">Niedrig</option>
-        </select>
-        <input type="date" id="addDue" aria-label="Fällig am">
-        <select id="addCat" aria-label="Kategorie">
-          <option value="beruf">Beruflich</option>
-          <option value="privat">Privat</option>
-        </select>
-        <button class="btn primary" type="submit">Hinzufügen</button>
-      </div>
-    </form>
-    <ul class="list" id="todoList"></ul>
-    <button class="done-toggle" id="doneToggle" aria-expanded="false" hidden></button>
-    <ul class="list" id="doneList" hidden></ul>
+  <aside class="side">
+    <section class="panel goals" aria-label="Wochenziele">
+      <h2>Wochenziele <small id="goalKw"></small></h2>
+      <textarea id="goalText" placeholder="Was soll bis Freitag erreicht sein? z.B. Ziel definieren, Ergebnis festlegen …"></textarea>
+      <span class="goal-state" id="goalState"></span>
+    </section>
+
+    <section class="panel" aria-label="To-do-Liste">
+      <h2>To-dos <small id="openCount"></small></h2>
+      <form class="add" id="addForm" autocomplete="off">
+        <input id="addTitle" placeholder="Neues To-do …" aria-label="Neues To-do" required>
+        <div class="add-row">
+          <select id="addPrio" aria-label="Priorität">
+            <option value="1">Hoch</option>
+            <option value="2" selected>Mittel</option>
+            <option value="3">Niedrig</option>
+          </select>
+          <input type="date" id="addDue" aria-label="Fällig am">
+          <select id="addCat" aria-label="Kategorie"></select>
+          <button class="btn primary" type="submit">Hinzufügen</button>
+        </div>
+      </form>
+      <div class="filters" id="todoFilters"></div>
+      <ul class="list" id="todoList"></ul>
+      <button class="done-toggle" id="doneToggle" aria-expanded="false" hidden></button>
+      <ul class="list" id="doneList" hidden></ul>
+    </section>
   </aside>
 </main>
 
 <dialog id="evDlg">
-  <form class="dlg" id="evForm" method="dialog" novalidate>
+  <form class="dlg" id="evForm" novalidate>
     <h3 id="evHead">Termin</h3>
+    <div class="scope" id="evScope" hidden>
+      <span id="evScopeText">Dieser Termin gehört zu einer Serie.</span>
+      <div class="seg">
+        <label><input type="radio" name="evScope" id="evScopeOne" value="one" checked><span>Nur diesen Termin</span></label>
+        <label><input type="radio" name="evScope" id="evScopeAll" value="series"><span>Ganze Serie</span></label>
+      </div>
+    </div>
     <label class="lbl">Titel<input class="field" id="evTitle" required></label>
-    <div class="row">
+    <label class="lbl">Ort<input class="field" id="evLoc" placeholder="optional, z.B. Büro München"></label>
+    <label class="chkline"><input type="checkbox" id="evAllDay">Ganztägig</label>
+    <div class="flex">
       <label class="lbl">Datum<input class="field" type="date" id="evDate" required></label>
-      <label class="lbl">Von<select class="field" id="evStart"></select></label>
-      <label class="lbl">Bis<select class="field" id="evEnd"></select></label>
+      <label class="lbl" id="lblStart">Von<select class="field" id="evStart"></select></label>
+      <label class="lbl" id="lblEnd">Bis<select class="field" id="evEnd"></select></label>
+      <label class="lbl" id="lblEndDate" hidden>Bis einschl.<input class="field" type="date" id="evEndDate"></label>
     </div>
-    <div class="seg" role="radiogroup" aria-label="Kategorie">
-      <label class="cat-beruf"><input type="radio" name="evCat" id="evCatBeruf" value="beruf"><span>Beruflich</span></label>
-      <label class="cat-privat"><input type="radio" name="evCat" id="evCatPrivat" value="privat"><span>Privat</span></label>
+    <div class="seg cats" id="evCats" role="radiogroup" aria-label="Kategorie"></div>
+    <div class="row2">
+      <label class="lbl">Anzeigen als
+        <select class="field" id="evStatus">
+          <option value="busy">Gebucht</option>
+          <option value="tentative">Mit Vorbehalt</option>
+          <option value="oof">Außer Haus</option>
+          <option value="elsewhere">An anderem Ort tätig</option>
+          <option value="free">Frei</option>
+        </select>
+      </label>
+      <label class="lbl" id="lblRec">Wiederholen
+        <select class="field" id="evRec">
+          <option value="none">Nie</option>
+          <option value="daily">Täglich (Mo–Fr)</option>
+          <option value="weekly">Wöchentlich</option>
+          <option value="biweekly">Alle 2 Wochen</option>
+          <option value="monthly">Monatlich</option>
+        </select>
+      </label>
     </div>
+    <label class="lbl" id="lblUntil" hidden>Serie endet am (optional)<input class="field" type="date" id="evUntil"></label>
     <label class="lbl">Notiz<textarea class="field" id="evNote" rows="2"></textarea></label>
     <label class="link-todo" id="evLink" hidden><input type="checkbox" id="evTodoDone"><span id="evTodoText"></span></label>
     <p class="err" id="evErr"></p>
     <div class="actions">
       <button class="btn danger" type="button" id="evDel">Löschen</button>
+      <button class="btn" type="button" id="evDup" title="Kopie mit gleichen Daten anlegen">Duplizieren</button>
       <button class="btn" type="button" id="evCancel">Abbrechen</button>
       <button class="btn primary" type="submit">Speichern</button>
     </div>
@@ -301,7 +419,7 @@ textarea.field { resize: vertical; min-height: 60px; }
 </dialog>
 
 <dialog id="tdDlg">
-  <form class="dlg" id="tdForm" method="dialog" novalidate>
+  <form class="dlg" id="tdForm" novalidate>
     <h3>To-do bearbeiten</h3>
     <label class="lbl">Titel<input class="field" id="tdTitle" required></label>
     <div class="row2">
@@ -310,10 +428,8 @@ textarea.field { resize: vertical; min-height: 60px; }
       </label>
       <label class="lbl">Fällig am<input class="field" type="date" id="tdDue"></label>
     </div>
-    <div class="seg" role="radiogroup" aria-label="Kategorie">
-      <label class="cat-beruf"><input type="radio" name="tdCat" id="tdCatBeruf" value="beruf"><span>Beruflich</span></label>
-      <label class="cat-privat"><input type="radio" name="tdCat" id="tdCatPrivat" value="privat"><span>Privat</span></label>
-    </div>
+    <div class="seg cats" id="tdCats" role="radiogroup" aria-label="Kategorie"></div>
+    <label class="lbl">Notiz<textarea class="field" id="tdNote" rows="2"></textarea></label>
     <p class="err" id="tdErr"></p>
     <div class="actions">
       <button class="btn danger" type="button" id="tdDel">Löschen</button>
@@ -323,125 +439,236 @@ textarea.field { resize: vertical; min-height: 60px; }
   </form>
 </dialog>
 
+<dialog id="setDlg">
+  <div class="dlg">
+    <h3>Einstellungen</h3>
+    <section>
+      <h4>Kategorien</h4>
+      <ul class="catlist" id="catList"></ul>
+      <div><button class="btn small" type="button" id="catAdd">+ Kategorie</button></div>
+    </section>
+    <section>
+      <h4>Datensicherung</h4>
+      <p class="hint">Sichert alle Termine, To-dos, Wochenziele und Kategorien als Datei. Einspielen ergänzt bzw. überschreibt gleiche Einträge, löscht aber nichts.</p>
+      <div class="flex">
+        <button class="btn small" type="button" id="bkSave">Backup herunterladen</button>
+        <label class="btn small" for="bkFile">Backup einspielen</label>
+        <input type="file" id="bkFile" accept=".json,application/json" hidden>
+      </div>
+    </section>
+    <p class="err" id="setErr"></p>
+    <div class="actions">
+      <button class="btn" type="button" id="setCancel">Abbrechen</button>
+      <button class="btn primary" type="button" id="setSave">Speichern</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
 (() => {
   // ---------- Konstanten & Helfer ----------
-  const START = 5 * 60, END = 20 * 60, STEP = 30, SLOT = 26;
+  const START = 5 * 60, END = 20 * 60, STEP = 30, SLOT = 26, NSLOT = (END - START) / STEP;
   const DAYS = ["Mo", "Di", "Mi", "Do", "Fr"];
   const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
   const PRIO = { 1: "Hoch", 2: "Mittel", 3: "Niedrig" };
-  const CAT = { beruf: "Beruflich", privat: "Privat" };
+  const STATUS_SHORT = { tentative: "Vorbehalt", oof: "Außer Haus", elsewhere: "anderer Ort", free: "frei" };
+  const COLORS = { c1: "Blau", c2: "Grün", c3: "Orange", c4: "Violett", c5: "Rot", c6: "Petrol", c7: "Ocker", c8: "Grau" };
+  const DEFAULT_CATS = [{ id: "beruf", name: "Beruflich", color: "c1" }, { id: "privat", name: "Privat", color: "c2" }];
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, "0");
   const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const addDaysIso = (s, n) => iso(addDays(parse(s), n));
+  const dayDiff = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
   const mondayOf = (d) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; };
+  const weekOfDate = (d) => [0, 6].includes(d.getDay()) && iso(d) === iso(new Date()) ? addDays(mondayOf(d), 7) : mondayOf(d);
   const hm = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
   const ddmm = (d) => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`;
+  const dayLabel = (s) => { const d = parse(s); return `${WD[d.getDay()]} ${ddmm(d)}`; };
+  const hours = (m) => (m / 60).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " h";
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const clean = (o) => JSON.parse(JSON.stringify(o));
+  const isRec = (ev) => !!(ev.rec && ev.rec.freq && ev.rec.freq !== "none");
+  const mq = window.matchMedia("(max-width: 760px)");
   function isoWeek(d) {
     const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const day = t.getUTCDay() || 7;
-    t.setUTCDate(t.getUTCDate() + 4 - day);
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
     const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-    return Math.ceil(((t - y0) / 864e5 + 1) / 7);
+    return { year: t.getUTCFullYear(), week: Math.ceil(((t - y0) / 864e5 + 1) / 7) };
   }
   document.documentElement.style.setProperty("--slot", SLOT + "px");
 
   // ---------- Zustand ----------
-  const today = new Date();
+  const now0 = new Date();
   const S = {
-    events: new Map(),
-    todos: new Map(),
-    // Am Wochenende direkt die kommende Woche zeigen (Planung für Montag)
-    week: [0, 6].includes(today.getDay()) ? addDays(mondayOf(today), 7) : mondayOf(today),
-    day: clamp((today.getDay() + 6) % 7, 0, 4),
-    showDone: false,
-    drag: null,
+    events: new Map(), todos: new Map(), weeks: new Map(),
+    cats: DEFAULT_CATS,
+    week: weekOfDate(now0),
+    day: [0, 6].includes(now0.getDay()) ? 0 : (now0.getDay() + 6) % 7,
+    showDone: false, todoFilter: "all",
+    drag: null, sel: null, selDrag: null, resize: null, suppressClick: false,
   };
+  const catOf = (id) => S.cats.find((c) => c.id === id) || { id, name: "Ohne Kategorie", color: "c8" };
+  const catVar = (id) => `var(--${catOf(id).color})`;
+  const weekKey = () => { const w = isoWeek(S.week); return `${w.year}-W${pad(w.week)}`; };
 
   // ---------- Speicher: claude.ai-Datenbank (synchron) oder lokal ----------
   const LS_KEY = "produktivitaetsplan.v1";
   const store = {
-    cols: null,
-    queue: new Map(),
+    base: null, cols: null, queue: new Map(),
     loadLocal() {
       try {
         const raw = JSON.parse(localStorage.getItem(LS_KEY) || "null");
-        if (raw) { S.events = new Map(Object.entries(raw.events || {})); S.todos = new Map(Object.entries(raw.todos || {})); }
+        if (!raw) return;
+        S.events = new Map(Object.entries(raw.events || {}));
+        S.todos = new Map(Object.entries(raw.todos || {}));
+        S.weeks = new Map(Object.entries(raw.weeks || {}));
+        if (Array.isArray(raw.cats) && raw.cats.length) S.cats = raw.cats;
       } catch (e) { /* kein Speicher verfügbar */ }
     },
     saveLocal() {
       if (this.cols) return;
-      try { localStorage.setItem(LS_KEY, JSON.stringify({ events: Object.fromEntries(S.events), todos: Object.fromEntries(S.todos) })); } catch (e) { /* ignorieren */ }
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify({ events: Object.fromEntries(S.events), todos: Object.fromEntries(S.todos), weeks: Object.fromEntries(S.weeks), cats: S.cats }));
+      } catch (e) { /* ignorieren */ }
     },
-    write(kind, id, fn) {
+    write(key, fn) {
       // eine Schreiboperation pro Dokument gleichzeitig
-      const key = kind + "/" + id;
       const p = (this.queue.get(key) || Promise.resolve()).then(fn).catch((e) => {
-        toast(e && e.code === "quota_exceeded" ? "Speicher voll – bitte alte Termine löschen." : "Speichern fehlgeschlagen. Bitte Seite neu laden.");
+        toast(e && e.code === "quota_exceeded" ? "Speicher voll. Bitte alte Termine löschen." : "Speichern fehlgeschlagen. Bitte Seite neu laden.");
       });
       this.queue.set(key, p);
+      return p;
     },
-    put(kind, obj) {
+    put(kind, obj, silent) {
+      obj = clean(obj);
       S[kind].set(obj.id, obj);
-      render();
-      if (this.cols) this.write(kind, obj.id, () => this.cols[kind].doc(obj.id).set(obj));
-      else this.saveLocal();
+      if (!silent) render();
+      if (this.cols) return this.write(kind + "/" + obj.id, () => this.cols[kind].doc(obj.id).set(obj));
+      this.saveLocal();
     },
     del(kind, id) {
       S[kind].delete(id);
       render();
-      if (this.cols) this.write(kind, id, () => this.cols[kind].doc(id).delete());
-      else this.saveLocal();
+      if (this.cols) return this.write(kind + "/" + id, () => this.cols[kind].doc(id).delete());
+      this.saveLocal();
+    },
+    putCats(cats) {
+      S.cats = clean(cats);
+      render();
+      if (this.base) return this.write("settings", () => this.base.set({ cats: S.cats }));
+      this.saveLocal();
     },
   };
 
   function setSync(state) {
     const el = $("syncState");
     el.dataset.state = state;
-    el.textContent = state === "cloud" ? "Synchronisiert über claude.ai" : state === "local" ? "Nur auf diesem Gerät gespeichert" : "Verbinde …";
+    el.textContent = state === "cloud" ? "Synchronisiert" : state === "local" ? "Nur auf diesem Gerät" : "Verbinde …";
+    el.title = state === "cloud" ? "Daten liegen in Deinem privaten Bereich auf claude.ai und sind auf allen Geräten gleich." : state === "local" ? "Daten liegen nur im Speicher dieses Browsers." : "";
   }
 
+  let downloads = null;
   async function connect() {
     if (!window.claude || typeof window.claude.use !== "function") { setSync("local"); return; }
+    window.claude.use("downloads").then((d) => { downloads = d; }).catch(() => {});
     try {
       const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
       const id = db && user ? await user.id() : null;
       if (!id) { setSync("local"); return; }
-      const base = db.doc("data/users/" + id + "/planner");
-      store.cols = { events: base.collection("events"), todos: base.collection("todos") };
-      S.events = new Map(); S.todos = new Map();
+      store.base = db.doc("data/users/" + id + "/planner");
+      store.cols = { events: store.base.collection("events"), todos: store.base.collection("todos"), weeks: store.base.collection("weeks") };
+      S.events = new Map(); S.todos = new Map(); S.weeks = new Map(); S.cats = DEFAULT_CATS;
       render();
       const onErr = () => { setSync("local"); toast("Verbindung zur Synchronisierung verloren. Bitte Seite neu laden."); };
-      for (const kind of ["events", "todos"]) {
+      const busy = () => S.drag || S.selDrag || S.resize;
+      for (const kind of ["events", "todos", "weeks"]) {
         store.cols[kind].onSnapshot((snap) => {
           S[kind] = new Map(snap.docs.map((d) => [d.id, d.data()]));
           setSync("cloud");
-          if (!S.drag && !S.selDrag) render();
+          if (!busy()) render();
         }, onErr);
       }
+      store.base.onSnapshot((snap) => {
+        const c = snap.exists && snap.data().cats;
+        S.cats = Array.isArray(c) && c.length ? c : DEFAULT_CATS;
+        if (!busy()) render();
+      }, onErr);
     } catch (e) { setSync("local"); }
   }
 
-  // ---------- Toast ----------
+  // ---------- Toast (mit optionalem "Rückgängig") ----------
   let toastTimer;
-  function toast(msg) {
+  function toast(msg, action) {
     let el = document.querySelector(".toast");
     if (!el) { el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); }
-    el.textContent = msg; el.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 4000);
+    el.innerHTML = `<span>${esc(msg)}</span>${action ? `<button type="button">${esc(action.label)}</button>` : ""}`;
+    if (action) el.querySelector("button").onclick = () => { el.hidden = true; action.fn(); };
+    el.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, action ? 7000 : 4000);
+  }
+
+  // ---------- Serien ----------
+  function occursOn(ev, ds) {
+    if (ds < ev.date) return false;
+    if (!isRec(ev)) return ds === ev.date;
+    const r = ev.rec;
+    if (r.until && ds > r.until) return false;
+    if (r.ex && r.ex.includes(ds)) return false;
+    const d = parse(ds), s = parse(ev.date), diff = dayDiff(ev.date, ds);
+    switch (r.freq) {
+      case "daily": return d.getDay() >= 1 && d.getDay() <= 5;
+      case "weekly": return diff % 7 === 0;
+      case "biweekly": return diff % 14 === 0;
+      case "monthly": return d.getDate() === s.getDate();
+    }
+    return false;
+  }
+  // Einen Termin an neue Stelle setzen; bei Serien wird nur dieses Vorkommen herausgelöst
+  function moveInstance(base, occDate, props) {
+    if (isRec(base)) {
+      const prev = base;
+      store.put("events", { ...base, rec: { ...base.rec, ex: [...(base.rec.ex || []), occDate] } }, true);
+      const copy = { ...base, ...props, id: uid(), rec: null };
+      if (!props.date) copy.date = occDate;
+      store.put("events", copy);
+      toast("Nur dieses Vorkommen geändert.", { label: "Rückgängig", fn: () => { store.put("events", prev, true); store.del("events", copy.id); } });
+    } else {
+      store.put("events", { ...base, ...props });
+    }
   }
 
   // ---------- Kalender ----------
   const weekDays = () => DAYS.map((_, i) => addDays(S.week, i));
   const todoOf = (ev) => (ev.todoId ? S.todos.get(ev.todoId) : null);
+  const visibleIdx = () => (mq.matches ? [S.day] : [0, 1, 2, 3, 4]);
+
+  function weekInstances(dates) {
+    const timed = new Map(dates.map((d) => [d, []]));
+    const allDay = [];
+    const mon = dates[0], fri = dates[4];
+    for (const ev of S.events.values()) {
+      if (!ev.allDay) {
+        for (const ds of dates) if (occursOn(ev, ds)) {
+          let end = ev.end;
+          if (S.resize && S.resize.id === ev.id && S.resize.date === ds) end = S.resize.end;
+          timed.get(ds).push({ ev, date: ds, start: ev.start, end, occ: isRec(ev) });
+        }
+      } else if (isRec(ev)) {
+        for (const ds of dates) if (occursOn(ev, ds)) allDay.push({ ev, date: ds, from: ds, to: ds, occ: true });
+      } else {
+        const to = ev.endDate || ev.date;
+        if (ev.date <= fri && to >= mon) allDay.push({ ev, date: ev.date, from: ev.date, to, occ: false });
+      }
+    }
+    return { timed, allDay };
+  }
 
   function layoutDay(list) {
-    const items = list.map((e) => ({ e, start: e.start, end: e.end, lane: 0, n: 1 })).sort((a, b) => a.start - b.start || b.end - a.end);
+    const items = list.map((it) => ({ ...it, lane: 0, n: 1 })).sort((a, b) => a.start - b.start || b.end - a.end);
     const clusters = []; let cur = [], end = -1;
     for (const it of items) {
       if (cur.length && it.start >= end) { clusters.push(cur); cur = []; end = -1; }
@@ -460,92 +687,149 @@ textarea.field { resize: vertical; min-height: 60px; }
     return items;
   }
 
+  const catOptions = (sel) => S.cats.map((c) => `<option value="${esc(c.id)}" ${c.id === sel ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+
+  function editorHtml(s) {
+    const label = s.allDay ? (s.date === s.endDate ? "ganztägig · " + dayLabel(s.date) : `${dayLabel(s.date)} – ${dayLabel(s.endDate)}`) : `${hm(s.start)}–${hm(s.end)}`;
+    return `<div class="inline" style="--c:${catVar(s.cat)}${s.allDay ? "" : `;top:${Math.min((s.start - START) / STEP * SLOT, NSLOT * SLOT - 100)}px;min-height:${(s.end - s.start) / STEP * SLOT}px`}">
+      <span class="it">${label}</span>
+      <input id="inlineTitle" value="${esc(s.text)}" placeholder="${s.allDay ? "z.B. Büro München" : "Titel eingeben …"}" aria-label="Titel" autocomplete="off">
+      <div class="ib"><select class="ib-cat" aria-label="Kategorie">${catOptions(s.cat)}</select><button type="button" class="ib-more">Details</button><button type="button" class="ib-ok" aria-label="Speichern">✓</button></div></div>`;
+  }
+
+  function evTitleAttr(ev) {
+    return esc([ev.title, ev.location, ev.note].filter(Boolean).join("\n"));
+  }
+
+  function renderAllDay(visDates, items, cols) {
+    const bars = [];
+    for (const it of items) {
+      let a = -1, b = -1;
+      visDates.forEach((d, k) => { if (d >= it.from && d <= it.to) { if (a < 0) a = k; b = k; } });
+      if (a >= 0) bars.push({ ...it, a, b });
+    }
+    bars.sort((x, y) => x.a - y.a || (y.b - y.a) - (x.b - x.a));
+    const lanes = [];
+    for (const bar of bars) {
+      let l = lanes.findIndex((e) => e < bar.a);
+      if (l < 0) { l = lanes.length; lanes.push(-1); }
+      lanes[l] = bar.b; bar.lane = l;
+    }
+    const sel = S.sel && S.sel.allDay ? S.sel : null;
+    let sa = -1, sb = -1;
+    if (sel) visDates.forEach((d, k) => { if (d >= sel.date && d <= sel.endDate) { if (sa < 0) sa = k; sb = k; } });
+    const rows = Math.max(1, lanes.length + (sa >= 0 ? 1 : 0));
+    let html = `<div class="g-all" style="grid-template-columns:${cols};grid-template-rows:repeat(${rows}, minmax(24px, auto))">
+      <div class="a-lbl" style="grid-row:1 / span ${rows}">ganz&shy;tägig</div>`;
+    visDates.forEach((d, k) => { html += `<div class="a-cell" data-date="${d}" style="grid-column:${k + 2};grid-row:1 / span ${rows}"></div>`; });
+    for (const bar of bars) {
+      const ev = bar.ev, st = ev.status || "free", t = todoOf(ev);
+      const contL = bar.from < visDates[bar.a], contR = bar.to > visDates[bar.b];
+      html += `<div class="ev ad st-${st} ${t && t.done ? "done" : ""} ${contL ? "cont-l" : ""} ${contR ? "cont-r" : ""}" draggable="true" data-id="${esc(ev.id)}" data-date="${bar.date}"
+        style="--c:${catVar(ev.cat)};grid-column:${bar.a + 2} / ${bar.b + 3};grid-row:${bar.lane + 1}" title="${evTitleAttr(ev)}">
+        ${contL ? "<span class='ev-t'>◂</span>" : ""}<span class="ev-n">${t && t.done ? "✓ " : ""}${esc(ev.title)}</span>${ev.location ? `<span class="ev-t">${esc(ev.location)}</span>` : ""}${STATUS_SHORT[st] && st !== "free" ? `<span class="ev-t">· ${STATUS_SHORT[st]}</span>` : ""}${bar.occ ? "<span class='ev-t'>↻</span>" : ""}${contR ? "<span class='ev-t'>▸</span>" : ""}</div>`;
+    }
+    if (sa >= 0) {
+      html += sel.editing
+        ? `<div class="a-sel" style="grid-column:${sa + 2} / ${sb + 3};grid-row:${rows}">${editorHtml(sel)}</div>`
+        : `<div class="selbox a" style="grid-column:${sa + 2} / ${sb + 3};grid-row:${rows}"></div>`;
+    }
+    return html + "</div>";
+  }
+
   function renderCal() {
-    const hadFocus = document.activeElement && document.activeElement.id === "inlineTitle";
-    const days = weekDays();
+    const focusEl = document.activeElement;
+    const hadFocus = focusEl && focusEl.id === "inlineTitle";
+    const days = weekDays(), dates = days.map(iso);
+    const vis = visibleIdx(), visDates = vis.map((i) => dates[i]);
     const todayIso = iso(new Date());
-    $("kwLabel").textContent = "KW " + isoWeek(S.week);
+    const w = isoWeek(S.week);
+    $("kwLabel").textContent = "KW " + w.week;
     $("rangeLabel").textContent = `${ddmm(days[0])} – ${ddmm(days[4])}${days[4].getFullYear()}`;
-
     $("dayPick").innerHTML = days.map((d, i) =>
-      `<button type="button" data-i="${i}" aria-pressed="${i === S.day}" class="${iso(d) === todayIso ? "today" : ""}"><span class="dn">${DAYS[i]}</span><span class="dd">${ddmm(d)}</span></button>`).join("");
+      `<button type="button" data-i="${i}" aria-pressed="${i === S.day}" class="${dates[i] === todayIso ? "today" : ""}"><span class="dn">${DAYS[i]}</span><span class="dd">${ddmm(d)}</span></button>`).join("");
 
-    const head = `<div class="g-head"><div></div>${days.map((d, i) =>
-      `<div class="g-day ${iso(d) === todayIso ? "today" : ""} ${i === S.day ? "sel" : ""}"><span class="dn">${DAYS[i]}</span><span class="dd">${ddmm(d)}</span></div>`).join("")}</div>`;
+    const inst = weekInstances(dates);
+    const cols = `var(--gut) repeat(${vis.length}, minmax(0, 1fr))`;
+    const dueBy = new Map();
+    for (const t of S.todos.values()) if (!t.done && t.due) dueBy.set(t.due, [...(dueBy.get(t.due) || []), t.title]);
+
+    const head = `<div class="g-row" style="grid-template-columns:${cols}"><div></div>${vis.map((i) => {
+      const ds = dates[i], due = dueBy.get(ds);
+      return `<div class="g-day ${ds === todayIso ? "today" : ""}"><span class="dn">${DAYS[i]}</span><span class="dd">${ddmm(days[i])}</span>${due ? `<span class="due" title="Fällige To-dos:\n${esc(due.join("\n"))}">${due.length} fällig</span>` : ""}</div>`;
+    }).join("")}</div>`;
 
     let times = "";
     for (let m = START; m < END; m += 60) times += `<span style="top:${(m - START) / STEP * SLOT}px">${hm(m)}</span>`;
 
-    const byDay = new Map(days.map((d) => [iso(d), []]));
-    for (const ev of S.events.values()) if (byDay.has(ev.date)) byDay.get(ev.date).push(ev);
-
-    const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
-    const cols = days.map((d, i) => {
-      const key = iso(d);
-      const evs = layoutDay(byDay.get(key)).map(({ e, lane, n }) => {
-        const top = (e.start - START) / STEP * SLOT;
-        const h = (e.end - e.start) / STEP * SLOT;
-        const t = todoOf(e);
-        const short = e.end - e.start <= STEP;
-        return `<div class="ev cat-${e.cat === "privat" ? "privat" : "beruf"} ${short ? "short" : ""} ${t && t.done ? "done" : ""}" draggable="true" data-id="${esc(e.id)}"
-          style="top:${top + 1}px;height:${h - 2}px;left:calc(${lane} * 100% / ${n} + 2px);width:calc(100% / ${n} - 4px)" title="${esc(e.title)}${e.note ? "\n" + esc(e.note) : ""}">
-          <span class="ev-t">${hm(e.start)}–${hm(e.end)}</span><span class="ev-n">${t && t.done ? "✓ " : ""}${esc(e.title)}</span></div>`;
+    const n = new Date(), nowMin = n.getHours() * 60 + n.getMinutes();
+    const colsHtml = visDates.map((ds) => {
+      const evs = layoutDay(inst.timed.get(ds)).map((it) => {
+        const ev = it.ev, top = (it.start - START) / STEP * SLOT, h = (it.end - it.start) / STEP * SLOT;
+        const t = todoOf(ev), st = ev.status || "busy", short = it.end - it.start <= STEP;
+        const meta = [STATUS_SHORT[st], it.occ ? "↻" : ""].filter(Boolean).join(" · ");
+        return `<div class="ev st-${st} ${short ? "short" : ""} ${t && t.done ? "done" : ""}" draggable="true" data-id="${esc(ev.id)}" data-date="${ds}"
+          style="--c:${catVar(ev.cat)};top:${top + 1}px;height:${h - 2}px;left:calc(${it.lane} * 100% / ${it.n} + 2px);width:calc(100% / ${it.n} - 4px)" title="${evTitleAttr(ev)}">
+          <span class="ev-t">${hm(it.start)}–${hm(it.end)}${meta ? " · " + meta : ""}</span><span class="ev-n">${t && t.done ? "✓ " : ""}${esc(ev.title)}</span>${ev.location && !short ? `<span class="ev-l">${esc(ev.location)}</span>` : ""}<span class="rz" aria-hidden="true"></span></div>`;
       }).join("");
-      const isToday = key === todayIso;
-      const nowLine = isToday && nowMin >= START && nowMin <= END ? `<div class="now" style="top:${(nowMin - START) / STEP * SLOT}px"></div>` : "";
-      return `<div class="g-col ${isToday ? "today" : ""} ${key < todayIso ? "past" : ""} ${i === S.day ? "sel" : ""}" data-date="${key}" aria-label="${DAYS[i]} ${ddmm(d)}">${evs}${nowLine}</div>`;
+      let sel = "";
+      if (S.sel && !S.sel.allDay && S.sel.date === ds) {
+        sel = S.sel.editing ? editorHtml(S.sel)
+          : `<div class="selbox" style="top:${(S.sel.start - START) / STEP * SLOT}px;height:${(S.sel.end - S.sel.start) / STEP * SLOT}px"></div>`;
+      }
+      const nowLine = ds === todayIso && nowMin >= START && nowMin <= END ? `<div class="now" style="top:${(nowMin - START) / STEP * SLOT}px"></div>` : "";
+      return `<div class="g-col ${ds === todayIso ? "today" : ""} ${ds < todayIso ? "past" : ""}" data-date="${ds}">${evs}${sel}${nowLine}</div>`;
     }).join("");
 
-    $("grid").innerHTML = `${head}<div class="g-body"><div class="g-times">${times}</div>${cols}</div>`;
-    renderSel(hadFocus);
+    grid.innerHTML = `<div class="g-sticky">${head}${renderAllDay(visDates, inst.allDay, cols)}</div><div class="g-body" style="grid-template-columns:${cols}"><div class="g-times">${times}</div>${colsHtml}</div>`;
+    if (hadFocus) {
+      const inp = $("inlineTitle");
+      if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    }
+    renderStats(inst, dates);
   }
 
-  // ---------- Zeitraum markieren + direkt eintragen (wie Outlook) ----------
-  function renderSel(focus) {
-    $("grid").querySelectorAll(".selbox, .inline").forEach((n) => n.remove());
-    const s = S.sel; if (!s) return;
-    const col = $("grid").querySelector(`.g-col[data-date="${s.date}"]`); if (!col) return;
-    const top = (s.start - START) / STEP * SLOT, h = (s.end - s.start) / STEP * SLOT;
-    const box = document.createElement("div");
-    box.className = "selbox"; box.style.top = top + "px"; box.style.height = h + "px";
-    col.appendChild(box);
-    if (!s.editing) return;
-    const ed = document.createElement("div");
-    ed.className = "inline cat-" + s.cat;
-    ed.style.top = Math.min(top, 30 * SLOT - 96) + "px";
-    ed.style.minHeight = h + "px";
-    ed.innerHTML = `<span class="it">${hm(s.start)}–${hm(s.end)}</span>
-      <input id="inlineTitle" placeholder="Titel eingeben …" aria-label="Titel des neuen Termins" autocomplete="off">
-      <div class="ib"><button type="button" class="ib-cat" title="Kategorie wechseln">${CAT[s.cat]}</button><button type="button" class="ib-more">Details</button><button type="button" class="ib-ok" aria-label="Speichern">✓</button></div>`;
-    col.appendChild(ed);
-    const inp = ed.querySelector("input");
-    inp.value = s.text;
-    if (focus) inp.focus();
+  function renderStats(inst, dates) {
+    const per = new Map(); let total = 0;
+    for (const ds of dates) for (const it of inst.timed.get(ds)) {
+      if ((it.ev.status || "busy") === "free") continue;
+      const m = it.end - it.start; total += m;
+      per.set(it.ev.cat, (per.get(it.ev.cat) || 0) + m);
+    }
+    const free = 5 * (END - START) - total;
+    $("stats").innerHTML = `<span>Verplant <b>${hours(total)}</b></span>` +
+      [...per.entries()].sort((a, b) => b[1] - a[1]).map(([c, m]) => `<span class="st-cat" style="--c:${catVar(c)}"><i></i>${esc(catOf(c).name)} <b>${hours(m)}</b></span>`).join("") +
+      `<span>frei im Raster <b>${hours(Math.max(0, free))}</b></span>` +
+      `<span class="hint">Zeitraum markieren → Titel tippen → Enter · Doppelklick = Details</span>`;
   }
-  function setSel(date, a, b) {
-    const lo = Math.min(a, b), hi = Math.max(a, b);
-    S.sel = { date, start: START + lo * STEP, end: START + (hi + 1) * STEP, text: "", cat: S.sel ? S.sel.cat : "beruf", editing: false };
-    renderSel();
+
+  // ---------- Wochenziele ----------
+  let goalTimer = null, goalKeyEditing = null;
+  function renderGoals() {
+    const key = weekKey(), w = isoWeek(S.week);
+    $("goalKw").textContent = "KW " + w.week;
+    const ta = $("goalText");
+    if (document.activeElement !== ta || goalKeyEditing !== key) {
+      const doc = S.weeks.get(key);
+      if (ta.value !== (doc ? doc.text : "")) ta.value = doc ? doc.text : "";
+    }
   }
-  function editSel() { if (S.sel) { S.sel.editing = true; renderSel(true); } }
-  function cancelSel() { S.sel = null; renderSel(); }
-  function commitSel() {
-    const s = S.sel; if (!s) return;
-    S.sel = null;
-    const title = s.text.trim();
-    if (!title) { renderSel(); return; }
-    store.put("events", { id: uid(), title, date: s.date, start: s.start, end: s.end, cat: s.cat, note: "" });
-  }
-  function selDetails() {
-    const s = S.sel; if (!s) return;
-    S.sel = null; renderSel();
-    openEvent({ title: s.text.trim(), date: s.date, start: s.start, end: s.end, cat: s.cat });
-  }
+  $("goalText").addEventListener("input", () => {
+    const key = weekKey(); goalKeyEditing = key;
+    $("goalState").textContent = "…";
+    clearTimeout(goalTimer);
+    goalTimer = setTimeout(() => {
+      const text = $("goalText").value;
+      const p = store.put("weeks", { id: key, text }, true);
+      Promise.resolve(p).then(() => { $("goalState").textContent = "Gespeichert"; });
+    }, 800);
+  });
+  $("goalText").addEventListener("blur", () => { goalKeyEditing = null; });
 
   // ---------- To-dos ----------
   function nextEventOf(todoId) {
     let best = null;
-    for (const e of S.events.values()) if (e.todoId === todoId && (!best || e.date + hm(e.start) < best.date + hm(best.start))) best = e;
+    for (const e of S.events.values()) if (e.todoId === todoId && (!best || e.date + hm(e.start || 0) < best.date + hm(best.start || 0))) best = e;
     return best;
   }
 
@@ -553,30 +837,35 @@ textarea.field { resize: vertical; min-height: 60px; }
     const todayIso = iso(new Date());
     let due = "";
     if (t.due) {
-      const d = parse(t.due);
-      if (!t.done && t.due < todayIso) due = `<span class="over">überfällig · ${ddmm(d)}</span>`;
+      if (!t.done && t.due < todayIso) due = `<span class="over">überfällig · ${dayLabel(t.due)}</span>`;
       else if (!t.done && t.due === todayIso) due = `<span class="due-today">heute fällig</span>`;
-      else due = `<span>fällig ${WD[d.getDay()]} ${ddmm(d)}</span>`;
+      else due = `<span>fällig ${dayLabel(t.due)}</span>`;
     }
     const ev = nextEventOf(t.id);
-    const planned = ev ? `<span class="planned">⧗ ${WD[parse(ev.date).getDay()]} ${ddmm(parse(ev.date))} ${hm(ev.start)}</span>` : "";
-    return `<li class="td p${t.prio} ${t.done ? "done" : ""}" draggable="${!t.done}" data-id="${esc(t.id)}">
+    const planned = ev ? `<span class="planned" title="Eingeplant">⧗ ${dayLabel(ev.date)}${ev.allDay ? "" : " " + hm(ev.start)}</span>` : "";
+    const c = catOf(t.cat);
+    return `<li class="td p${t.prio} ${t.done ? "done" : ""}" draggable="${!t.done}" data-id="${esc(t.id)}" title="${esc(t.note || "")}">
       <button type="button" class="chk" role="checkbox" aria-checked="${!!t.done}" aria-label="Erledigt: ${esc(t.title)}"><svg viewBox="0 0 16 16" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></button>
       <div><button type="button" class="td-title">${esc(t.title)}</button>
-        <div class="td-meta"><span class="prio">${PRIO[t.prio] || ""}</span>${due}<span class="cat cat-${t.cat === "privat" ? "privat" : "beruf"}">${CAT[t.cat] || CAT.beruf}</span>${planned}</div></div>
+        <div class="td-meta"><span class="prio">${PRIO[t.prio] || ""}</span>${due}<span class="cat" style="--c:var(--${c.color})">${esc(c.name)}</span>${planned}${t.note ? "<span>✎ Notiz</span>" : ""}</div></div>
       ${t.done ? "<span></span>" : `<button type="button" class="td-plan" aria-label="In den Kalender einplanen" title="Einplanen"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3M8 8.5v3.5M6.25 10.25h3.5"/></svg></button>`}
     </li>`;
   }
 
   function renderTodos() {
     const all = [...S.todos.values()];
-    const open = all.filter((t) => !t.done).sort((a, b) =>
+    if (S.todoFilter !== "all" && !S.cats.some((c) => c.id === S.todoFilter)) S.todoFilter = "all";
+    const match = (t) => S.todoFilter === "all" || t.cat === S.todoFilter;
+    const openAll = all.filter((t) => !t.done);
+    const open = openAll.filter(match).sort((a, b) =>
       a.prio - b.prio || (a.due || "9999").localeCompare(b.due || "9999") || (a.created || 0) - (b.created || 0));
-    const done = all.filter((t) => t.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
-    $("openCount").textContent = open.length ? `${open.length} offen` : "";
-    $("tabCount").textContent = open.length ? `(${open.length})` : "";
+    const done = all.filter((t) => t.done && match(t)).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    $("openCount").textContent = openAll.length ? `${openAll.length} offen` : "";
+    $("tabCount").textContent = openAll.length ? `(${openAll.length})` : "";
+    $("todoFilters").innerHTML = [`<button type="button" data-f="all" aria-pressed="${S.todoFilter === "all"}">Alle</button>`,
+      ...S.cats.map((c) => `<button type="button" data-f="${esc(c.id)}" aria-pressed="${S.todoFilter === c.id}" style="--c:var(--${c.color})"><i></i>${esc(c.name)} ${openAll.filter((t) => t.cat === c.id).length || ""}</button>`)].join("");
     $("todoList").innerHTML = open.length ? open.map(todoHtml).join("")
-      : `<li class="empty">Keine offenen To-dos. Oben eintragen, dann per Ziehen oder über das Kalender-Symbol einplanen.</li>`;
+      : `<li class="empty">${openAll.length ? "Keine offenen To-dos in dieser Kategorie." : "Keine offenen To-dos. Oben eintragen, dann ins Raster ziehen oder über das Kalender-Symbol einplanen."}</li>`;
     const tg = $("doneToggle");
     tg.hidden = !done.length;
     tg.textContent = `Erledigt (${done.length}) ${S.showDone ? "▴" : "▾"}`;
@@ -585,72 +874,155 @@ textarea.field { resize: vertical; min-height: 60px; }
     $("doneList").innerHTML = done.map(todoHtml).join("");
   }
 
-  function render() { renderCal(); renderTodos(); }
+  let catSig = "";
+  function renderCatControls() {
+    const sig = JSON.stringify(S.cats);
+    if (sig === catSig) return;
+    catSig = sig;
+    const keep = $("addCat").value;
+    $("addCat").innerHTML = catOptions(S.cats.some((c) => c.id === keep) ? keep : S.cats[0].id);
+  }
+  function catRadios(name, sel) {
+    return S.cats.map((c) => `<label style="--c:var(--${c.color})"><input type="radio" name="${name}" value="${esc(c.id)}" ${c.id === sel ? "checked" : ""}><span>${esc(c.name)}</span></label>`).join("");
+  }
+
+  function render() { renderCatControls(); renderCal(); renderTodos(); renderGoals(); }
 
   // ---------- Termin-Dialog ----------
   const evDlg = $("evDlg");
-  let editing = null; // {id|null, todoId}
+  let editing = null; // {id|null, occDate|null, todoId}
   (function fillTimes() {
     let s = "", e = "";
     for (let m = START; m < END; m += STEP) s += `<option value="${m}">${hm(m)}</option>`;
     for (let m = START + STEP; m <= END; m += STEP) e += `<option value="${m}">${hm(m)}</option>`;
     $("evStart").innerHTML = s; $("evEnd").innerHTML = e;
   })();
+  function disarm(btn) { btn.classList.remove("armed"); btn.textContent = "Löschen"; }
+  function syncEvForm() {
+    const allDay = $("evAllDay").checked;
+    $("lblStart").hidden = allDay; $("lblEnd").hidden = allDay; $("lblEndDate").hidden = !allDay;
+    const one = editing && editing.occDate && $("evScopeOne").checked;
+    $("lblRec").hidden = !!one;
+    $("lblUntil").hidden = !!one || $("evRec").value === "none";
+  }
 
-  function armDelete(btn) { btn.classList.remove("armed"); btn.textContent = "Löschen"; }
-
-  function openEvent(ev) {
-    editing = { id: ev.id || null, todoId: ev.todoId || null };
-    $("evHead").textContent = ev.id ? "Termin bearbeiten" : "Neuer Termin";
+  function openEvent(ev, occDate) {
+    editing = { id: ev.id || null, occDate: occDate || null, todoId: ev.todoId || null };
+    const isNew = !ev.id;
+    $("evHead").textContent = isNew ? (ev.allDay ? "Neues ganztägiges Ereignis" : "Neuer Termin") : (ev.allDay ? "Ereignis bearbeiten" : "Termin bearbeiten");
+    $("evScope").hidden = !occDate;
+    if (occDate) { $("evScopeOne").checked = true; $("evScopeText").textContent = `Serientermin am ${dayLabel(occDate)}. Ändern:`; }
     $("evTitle").value = ev.title || "";
-    $("evDate").value = ev.date;
-    $("evStart").value = ev.start;
-    $("evEnd").value = ev.end;
-    $(ev.cat === "privat" ? "evCatPrivat" : "evCatBeruf").checked = true;
+    $("evLoc").value = ev.location || "";
+    $("evAllDay").checked = !!ev.allDay;
+    const date = occDate || ev.date;
+    $("evDate").value = date;
+    $("evEndDate").value = occDate ? occDate : (ev.endDate || ev.date);
+    const st = ev.start ?? 8 * 60;
+    $("evStart").value = st;
+    $("evEnd").value = ev.end ?? Math.min(st + 60, END);
+    $("evCats").innerHTML = catRadios("evCat", S.cats.some((c) => c.id === ev.cat) ? ev.cat : S.cats[0].id);
+    $("evStatus").value = ev.status || (ev.allDay ? "free" : "busy");
+    $("evRec").value = isRec(ev) ? ev.rec.freq : "none";
+    $("evUntil").value = (ev.rec && ev.rec.until) || "";
     $("evNote").value = ev.note || "";
     const t = editing.todoId && S.todos.get(editing.todoId);
     $("evLink").hidden = !t;
     if (t) { $("evTodoDone").checked = !!t.done; $("evTodoText").textContent = "To-do erledigt: " + t.title; }
     $("evErr").textContent = "";
-    $("evDel").hidden = !ev.id; armDelete($("evDel"));
+    $("evDel").hidden = isNew; disarm($("evDel"));
+    $("evDup").hidden = isNew;
+    syncEvForm();
     evDlg.showModal();
-    if (!ev.id) $("evTitle").focus();
+    if (isNew) $("evTitle").focus();
   }
-
+  ["evAllDay", "evRec", "evScopeOne", "evScopeAll"].forEach((id) => $(id).addEventListener("change", syncEvForm));
+  $("evAllDay").addEventListener("change", () => {
+    if ($("evAllDay").checked) { $("evEndDate").value = $("evDate").value; if ($("evStatus").value === "busy") $("evStatus").value = "free"; }
+    else if ($("evStatus").value === "free") $("evStatus").value = "busy";
+  });
+  $("evDate").addEventListener("change", () => { if ($("evEndDate").value < $("evDate").value) $("evEndDate").value = $("evDate").value; });
   $("evStart").addEventListener("change", () => {
     const s = +$("evStart").value;
     if (+$("evEnd").value <= s) $("evEnd").value = Math.min(s + 60, END);
   });
 
+  function readEvForm() {
+    const allDay = $("evAllDay").checked;
+    const d = {
+      title: $("evTitle").value.trim(), location: $("evLoc").value.trim(), allDay,
+      date: $("evDate").value, endDate: allDay ? $("evEndDate").value : null,
+      start: allDay ? null : +$("evStart").value, end: allDay ? null : +$("evEnd").value,
+      cat: (document.querySelector('input[name="evCat"]:checked') || {}).value || S.cats[0].id,
+      status: $("evStatus").value, note: $("evNote").value.trim(),
+      rec: $("evRec").value === "none" ? null : { freq: $("evRec").value, until: $("evUntil").value || null },
+    };
+    let err = "";
+    if (!d.title) err = "Bitte einen Titel eingeben.";
+    else if (!d.date) err = "Bitte ein Datum wählen.";
+    else if (!allDay && [0, 6].includes(parse(d.date).getDay())) err = "Der Plan zeigt nur Mo–Fr. Bitte einen Wochentag wählen.";
+    else if (!allDay && d.end <= d.start) err = "Das Ende muss nach dem Beginn liegen.";
+    else if (allDay && (!d.endDate || d.endDate < d.date)) err = "Das Enddatum darf nicht vor dem Beginn liegen.";
+    else if (allDay && d.rec && d.endDate !== d.date) err = "Serien sind nur für eintägige Ereignisse möglich.";
+    else if (d.rec && d.rec.until && d.rec.until < d.date) err = "Das Serienende liegt vor dem ersten Termin.";
+    $("evErr").textContent = err;
+    return err ? null : d;
+  }
+
   $("evForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const title = $("evTitle").value.trim();
-    const date = $("evDate").value;
-    const start = +$("evStart").value, end = +$("evEnd").value;
-    const err = $("evErr");
-    if (!title) { err.textContent = "Bitte einen Titel eingeben."; return; }
-    if (!date) { err.textContent = "Bitte ein Datum wählen."; return; }
-    const wd = parse(date).getDay();
-    if (wd === 0 || wd === 6) { err.textContent = "Der Plan zeigt nur Mo–Fr. Bitte einen Wochentag wählen."; return; }
-    if (end <= start) { err.textContent = "Das Ende muss nach dem Beginn liegen."; return; }
+    const d = readEvForm(); if (!d) return;
     const prev = editing.id ? S.events.get(editing.id) : null;
-    const ev = { ...(prev || {}), id: editing.id || uid(), title, date, start, end,
-      cat: document.querySelector('input[name="evCat"]:checked').value, note: $("evNote").value.trim() };
-    if (editing.todoId) ev.todoId = editing.todoId;
-    store.put("events", ev);
+    const scopeOne = editing.occDate && $("evScopeOne").checked;
+    let saved;
+    if (!prev) {
+      saved = { id: uid(), ...d };
+      if (editing.todoId) saved.todoId = editing.todoId;
+      store.put("events", saved);
+    } else if (scopeOne) {
+      store.put("events", { ...prev, rec: { ...prev.rec, ex: [...(prev.rec.ex || []), editing.occDate] } }, true);
+      saved = { ...prev, ...d, id: uid(), rec: null };
+      store.put("events", saved);
+    } else if (editing.occDate) {
+      // ganze Serie: Verschiebung des Datums auf den Serienstart übertragen
+      const start = addDaysIso(prev.date, dayDiff(editing.occDate, d.date));
+      saved = { ...prev, ...d, date: start, endDate: d.allDay ? start : null, rec: d.rec ? { ...d.rec, ex: (prev.rec && prev.rec.ex) || [] } : null };
+      store.put("events", saved);
+    } else {
+      saved = { ...prev, ...d, rec: d.rec ? { ...d.rec, ex: (prev.rec && prev.rec.ex) || [] } : null };
+      store.put("events", saved);
+    }
     const t = editing.todoId && S.todos.get(editing.todoId);
     if (t && !!t.done !== $("evTodoDone").checked) toggleTodo(t);
-    const wk = mondayOf(parse(date));
-    if (+wk !== +S.week) { S.week = wk; }
-    S.day = (parse(date).getDay() + 6) % 7;
+    const vis = scopeOne || !editing.occDate ? d.date : null;
+    if (vis) {
+      const shown = parse(vis);
+      const wk = mondayOf([0, 6].includes(shown.getDay()) && d.allDay ? addDays(shown, 2) : shown);
+      if (+wk !== +S.week) S.week = wk;
+      if (![0, 6].includes(shown.getDay())) S.day = (shown.getDay() + 6) % 7;
+    }
     render();
     evDlg.close();
   });
   $("evCancel").addEventListener("click", () => evDlg.close());
+  $("evDup").addEventListener("click", () => {
+    const d = readEvForm(); if (!d) return;
+    store.put("events", { id: uid(), ...d, rec: null });
+    evDlg.close();
+    toast("Kopie angelegt.");
+  });
   $("evDel").addEventListener("click", (e) => {
     const b = e.currentTarget;
     if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Wirklich löschen?"; return; }
-    store.del("events", editing.id);
+    const prev = S.events.get(editing.id);
+    if (!prev) { evDlg.close(); return; }
+    if (editing.occDate && $("evScopeOne").checked) {
+      store.put("events", { ...prev, rec: { ...prev.rec, ex: [...(prev.rec.ex || []), editing.occDate] } });
+      toast("Termin aus der Serie gelöscht.", { label: "Rückgängig", fn: () => store.put("events", prev) });
+    } else {
+      store.del("events", prev.id);
+      toast(isRec(prev) ? "Serie gelöscht." : "Termin gelöscht.", { label: "Rückgängig", fn: () => store.put("events", prev) });
+    }
     evDlg.close();
   });
 
@@ -662,9 +1034,10 @@ textarea.field { resize: vertical; min-height: 60px; }
     $("tdTitle").value = t.title;
     $("tdPrio").value = t.prio;
     $("tdDue").value = t.due || "";
-    $(t.cat === "privat" ? "tdCatPrivat" : "tdCatBeruf").checked = true;
+    $("tdNote").value = t.note || "";
+    $("tdCats").innerHTML = catRadios("tdCat", S.cats.some((c) => c.id === t.cat) ? t.cat : S.cats[0].id);
     $("tdErr").textContent = "";
-    armDelete($("tdDel"));
+    disarm($("tdDel"));
     tdDlg.showModal();
   }
   $("tdForm").addEventListener("submit", (e) => {
@@ -672,33 +1045,110 @@ textarea.field { resize: vertical; min-height: 60px; }
     const title = $("tdTitle").value.trim();
     if (!title) { $("tdErr").textContent = "Bitte einen Titel eingeben."; return; }
     const t = S.todos.get(editingTodo);
-    if (t) store.put("todos", { ...t, title, prio: +$("tdPrio").value, due: $("tdDue").value,
-      cat: document.querySelector('input[name="tdCat"]:checked').value });
+    if (t) store.put("todos", { ...t, title, prio: +$("tdPrio").value, due: $("tdDue").value, note: $("tdNote").value.trim(),
+      cat: (document.querySelector('input[name="tdCat"]:checked') || {}).value || t.cat });
     tdDlg.close();
   });
   $("tdCancel").addEventListener("click", () => tdDlg.close());
   $("tdDel").addEventListener("click", (e) => {
     const b = e.currentTarget;
     if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Wirklich löschen?"; return; }
+    const prev = S.todos.get(editingTodo);
     store.del("todos", editingTodo);
     tdDlg.close();
+    if (prev) toast("To-do gelöscht.", { label: "Rückgängig", fn: () => store.put("todos", prev) });
   });
 
   function toggleTodo(t) {
     const done = !t.done;
     store.put("todos", { ...t, done, doneAt: done ? Date.now() : null });
+    if (done) toast("Erledigt: " + t.title, { label: "Rückgängig", fn: () => store.put("todos", t) });
   }
 
   function planTodo(t) {
-    const days = weekDays();
-    const todayIso = iso(new Date());
-    const dayIdx = days.findIndex((d) => iso(d) === todayIso);
-    const date = iso(days[window.matchMedia("(max-width: 760px)").matches ? S.day : (dayIdx >= 0 ? dayIdx : 0)]);
+    const dates = weekDays().map(iso), todayIso = iso(new Date());
+    const ti = dates.indexOf(todayIso);
+    const date = dates[mq.matches ? S.day : (ti >= 0 ? ti : 0)];
     const n = new Date();
     let start = date === todayIso ? Math.ceil((n.getHours() * 60 + n.getMinutes()) / STEP) * STEP : 8 * 60;
     start = clamp(start, START, END - 60);
-    openEvent({ title: t.title, date, start, end: start + 60, cat: t.cat, todoId: t.id });
+    openEvent({ title: t.title, date, start, end: start + 60, cat: t.cat, status: "busy", todoId: t.id });
   }
+
+  // ---------- Einstellungen ----------
+  const setDlg = $("setDlg");
+  let catDraft = [];
+  function renderCatList() {
+    $("catList").innerHTML = catDraft.map((c, i) => `<li data-i="${i}" style="--c:var(--${c.color})">
+      <span class="sw"></span>
+      <input class="field cn" value="${esc(c.name)}" aria-label="Name der Kategorie" maxlength="30">
+      <select class="field cc" aria-label="Farbe">${Object.entries(COLORS).map(([k, v]) => `<option value="${k}" ${k === c.color ? "selected" : ""}>${v}</option>`).join("")}</select>
+      <button type="button" class="cdel" aria-label="Kategorie ${esc(c.name)} löschen" title="Löschen">✕</button></li>`).join("");
+  }
+  $("openSettings").addEventListener("click", () => {
+    catDraft = S.cats.map((c) => ({ ...c }));
+    renderCatList();
+    $("setErr").textContent = "";
+    setDlg.showModal();
+  });
+  $("catList").addEventListener("input", (e) => {
+    const li = e.target.closest("li"); if (!li) return;
+    const c = catDraft[+li.dataset.i];
+    if (e.target.classList.contains("cn")) c.name = e.target.value;
+    if (e.target.classList.contains("cc")) { c.color = e.target.value; li.style.setProperty("--c", `var(--${c.color})`); }
+  });
+  $("catList").addEventListener("click", (e) => {
+    const b = e.target.closest(".cdel"); if (!b) return;
+    if (catDraft.length <= 1) { $("setErr").textContent = "Mindestens eine Kategorie muss bleiben."; return; }
+    catDraft.splice(+b.closest("li").dataset.i, 1);
+    renderCatList();
+  });
+  $("catAdd").addEventListener("click", () => {
+    const used = new Set(catDraft.map((c) => c.color));
+    const color = Object.keys(COLORS).find((k) => !used.has(k)) || "c8";
+    catDraft.push({ id: uid(), name: "", color });
+    renderCatList();
+    const inputs = $("catList").querySelectorAll(".cn");
+    inputs[inputs.length - 1].focus();
+  });
+  $("setCancel").addEventListener("click", () => setDlg.close());
+  $("setSave").addEventListener("click", () => {
+    const cats = catDraft.map((c) => ({ ...c, name: c.name.trim() }));
+    if (cats.some((c) => !c.name)) { $("setErr").textContent = "Bitte jeder Kategorie einen Namen geben."; return; }
+    store.putCats(cats);
+    setDlg.close();
+    toast("Einstellungen gespeichert.");
+  });
+
+  $("bkSave").addEventListener("click", async () => {
+    const data = JSON.stringify({ app: "produktivitaetsplan", version: 2, exportedAt: new Date().toISOString(),
+      cats: S.cats, events: [...S.events.values()], todos: [...S.todos.values()], weeks: [...S.weeks.values()] }, null, 2);
+    if (!downloads) { $("setErr").textContent = "Herunterladen geht nur in der claude.ai-Ansicht dieser Seite."; return; }
+    try { await downloads.save({ filename: `produktivitaetsplan-${iso(new Date())}.json`, data }); }
+    catch (e) { if (e && e.code === "unavailable") $("setErr").textContent = "Herunterladen ist in dieser Ansicht nicht möglich."; }
+  });
+  $("bkFile").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try {
+      const raw = JSON.parse(await f.text());
+      if (raw.app !== "produktivitaetsplan") throw new Error("format");
+      const ok = (o) => o && typeof o.id === "string";
+      const evs = (raw.events || []).filter(ok), tds = (raw.todos || []).filter(ok), wks = (raw.weeks || []).filter(ok);
+      if (Array.isArray(raw.cats) && raw.cats.length) {
+        const merged = [...S.cats]; for (const c of raw.cats) if (ok(c) && !merged.some((m) => m.id === c.id)) merged.push(c);
+        store.putCats(merged);
+      }
+      for (const x of evs) await store.put("events", x, true);
+      for (const x of tds) await store.put("todos", x, true);
+      for (const x of wks) await store.put("weeks", x, true);
+      render();
+      setDlg.close();
+      toast(`Eingespielt: ${evs.length} Termine, ${tds.length} To-dos, ${wks.length} Wochenziele.`);
+    } catch (err) {
+      $("setErr").textContent = "Die Datei ist kein Backup dieses Plans.";
+    }
+  });
 
   // ---------- Eingaben ----------
   $("addForm").addEventListener("submit", (e) => {
@@ -707,7 +1157,7 @@ textarea.field { resize: vertical; min-height: 60px; }
     if (!title) return;
     store.put("todos", { id: uid(), title, prio: +$("addPrio").value, due: $("addDue").value,
       cat: $("addCat").value, done: false, created: Date.now() });
-    $("addTitle").value = ""; $("addDue").value = "";
+    $("addTitle").value = ""; $("addDue").value = ""; $("addPrio").value = "2";
     $("addTitle").focus();
   });
 
@@ -721,98 +1171,201 @@ textarea.field { resize: vertical; min-height: 60px; }
   $("todoList").addEventListener("click", onTodoClick);
   $("doneList").addEventListener("click", onTodoClick);
   $("doneToggle").addEventListener("click", () => { S.showDone = !S.showDone; renderTodos(); });
+  $("todoFilters").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    S.todoFilter = b.dataset.f; renderTodos();
+  });
 
-  $("prevWeek").addEventListener("click", () => { S.week = addDays(S.week, -7); renderCal(); });
-  $("nextWeek").addEventListener("click", () => { S.week = addDays(S.week, 7); renderCal(); });
-  $("todayBtn").addEventListener("click", () => {
+  function goWeek(delta) { S.sel = null; S.week = addDays(S.week, 7 * delta); renderCal(); renderGoals(); }
+  function goToday() {
     const t = new Date();
-    S.week = [0, 6].includes(t.getDay()) ? addDays(mondayOf(t), 7) : mondayOf(t);
+    S.sel = null;
+    S.week = weekOfDate(t);
     S.day = [0, 6].includes(t.getDay()) ? 0 : (t.getDay() + 6) % 7;
-    renderCal();
+    renderCal(); renderGoals();
+  }
+  $("prevWeek").addEventListener("click", () => goWeek(-1));
+  $("nextWeek").addEventListener("click", () => goWeek(1));
+  $("todayBtn").addEventListener("click", goToday);
+  $("jump").addEventListener("change", (e) => {
+    if (!e.target.value) return;
+    const d = parse(e.target.value);
+    S.sel = null;
+    S.week = [0, 6].includes(d.getDay()) ? addDays(mondayOf(d), 7) : mondayOf(d);
+    S.day = [0, 6].includes(d.getDay()) ? 0 : (d.getDay() + 6) % 7;
+    renderCal(); renderGoals();
   });
   $("dayPick").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    S.day = +b.dataset.i; renderCal();
+    S.day = +b.dataset.i; S.sel = null; renderCal();
   });
   $("tabs").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     $("layout").dataset.tab = b.dataset.tab;
     document.querySelectorAll("#tabs button").forEach((x) => x.setAttribute("aria-pressed", x === b));
   });
+  mq.addEventListener("change", () => { S.sel = null; renderCal(); });
+  document.addEventListener("keydown", (e) => {
+    if (document.querySelector("dialog[open]")) return;
+    if (e.key === "Escape" && S.sel) { cancelSel(); return; }
+    if (e.target.closest("input, textarea, select") || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === "ArrowLeft") goWeek(-1);
+    else if (e.key === "ArrowRight") goWeek(1);
+    else if (e.key === "t" || e.key === "T") goToday();
+  });
 
-  // Klick ins Raster: neuer Termin / bestehenden öffnen
+  // ---------- Markieren, Eintragen, Größe ändern ----------
   const grid = $("grid");
-  const slotAt = (col, clientY) => START + Math.floor((clientY - col.getBoundingClientRect().top) / SLOT) * STEP;
-  const slotIdx = (col, y) => clamp(Math.floor((y - col.getBoundingClientRect().top) / SLOT), 0, (END - START) / STEP - 1);
-  let mouseSelDone = false;
+  const colOf = (date) => grid.querySelector(`.g-col[data-date="${date}"]`);
+  const slotIdx = (col, y) => clamp(Math.floor((y - col.getBoundingClientRect().top) / SLOT), 0, NSLOT - 1);
 
-  // Maus: gedrückt halten und ziehen markiert einen Zeitraum
+  function setTimedSel(date, a, b) {
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    S.sel = { allDay: false, date, start: START + lo * STEP, end: START + (hi + 1) * STEP, text: "", cat: S.sel ? S.sel.cat : S.cats[0].id, editing: false };
+  }
+  function setAllDaySel(a, b) {
+    S.sel = { allDay: true, date: a < b ? a : b, endDate: a < b ? b : a, text: "", cat: S.sel ? S.sel.cat : S.cats[0].id, editing: false };
+  }
+  function editSel() { if (S.sel) { S.sel.editing = true; renderCal(); const i = $("inlineTitle"); if (i) i.focus(); } }
+  function cancelSel() { S.sel = null; renderCal(); }
+  function commitSel() {
+    const s = S.sel; if (!s) return;
+    S.sel = null;
+    const title = s.text.trim();
+    if (!title) { renderCal(); return; }
+    store.put("events", s.allDay
+      ? { id: uid(), title, allDay: true, date: s.date, endDate: s.endDate, start: null, end: null, cat: s.cat, status: "free", location: "", note: "" }
+      : { id: uid(), title, allDay: false, date: s.date, start: s.start, end: s.end, cat: s.cat, status: "busy", location: "", note: "" });
+  }
+  function selDetails() {
+    const s = S.sel; if (!s) return;
+    S.sel = null; renderCal();
+    openEvent(s.allDay
+      ? { title: s.text.trim(), allDay: true, date: s.date, endDate: s.endDate, cat: s.cat, status: "free" }
+      : { title: s.text.trim(), date: s.date, start: s.start, end: s.end, cat: s.cat, status: "busy" });
+  }
+
   grid.addEventListener("pointerdown", (e) => {
+    S.suppressClick = false; // der Klick nach einem Markieren feuert nicht immer (Raster wurde neu gezeichnet)
     if (e.target.closest(".inline")) return;
-    const date = e.target.closest(".g-col")?.dataset.date;
-    if (S.sel) commitSel(); // Klick daneben speichert Eingetipptes (wie Outlook); rendert das Raster neu
-    if (e.pointerType !== "mouse" || e.button !== 0 || e.target.closest(".ev") || !date) return;
-    const col = grid.querySelector(`.g-col[data-date="${date}"]`); if (!col) return;
-    e.preventDefault();
-    const a = slotIdx(col, e.clientY);
-    S.selDrag = { col, date: col.dataset.date, a, b: a };
-    col.classList.add("selecting");
-    col.setPointerCapture(e.pointerId);
-    setSel(col.dataset.date, a, a);
+    const rz = e.target.closest(".rz");
+    if (rz) {
+      const el = rz.closest(".ev"), ev = S.events.get(el.dataset.id);
+      if (!ev) return;
+      e.preventDefault();
+      if (S.sel) commitSel();
+      S.resize = { id: ev.id, date: el.dataset.date, start: ev.start, end: ev.end, orig: ev.end };
+      grid.classList.add("busy");
+      grid.setPointerCapture(e.pointerId);
+      return;
+    }
+    const colDate = e.target.closest(".g-col")?.dataset.date;
+    const cellDate = e.target.closest(".a-cell")?.dataset.date;
+    if (S.sel) commitSel(); // Klick daneben speichert Eingetipptes (wie Outlook)
+    if (e.pointerType !== "mouse" || e.button !== 0 || e.target.closest(".ev")) return;
+    if (colDate) {
+      const col = colOf(colDate); if (!col) return;
+      e.preventDefault();
+      const a = slotIdx(col, e.clientY);
+      S.selDrag = { allDay: false, date: colDate, a, b: a };
+      setTimedSel(colDate, a, a);
+    } else if (cellDate) {
+      e.preventDefault();
+      const cells = [...grid.querySelectorAll(".a-cell")].map((c) => { const r = c.getBoundingClientRect(); return { date: c.dataset.date, l: r.left, r: r.right }; });
+      S.selDrag = { allDay: true, a: cellDate, b: cellDate, cells };
+      setAllDaySel(cellDate, cellDate);
+    } else return;
+    grid.classList.add("busy");
+    grid.setPointerCapture(e.pointerId);
+    renderCal();
   });
   grid.addEventListener("pointermove", (e) => {
+    if (S.resize) {
+      const col = colOf(S.resize.date); if (!col) return;
+      const end = clamp(START + (slotIdx(col, e.clientY) + 1) * STEP, S.resize.start + STEP, END);
+      if (end !== S.resize.end) { S.resize.end = end; renderCal(); }
+      return;
+    }
     const d = S.selDrag; if (!d) return;
-    const b = slotIdx(d.col, e.clientY);
-    if (b !== d.b) { d.b = b; setSel(d.date, d.a, b); }
+    if (d.allDay) {
+      const c = d.cells.find((x) => e.clientX >= x.l && e.clientX < x.r) || (e.clientX < d.cells[0].l ? d.cells[0] : d.cells[d.cells.length - 1]);
+      if (c.date !== d.b) { d.b = c.date; setAllDaySel(d.a, d.b); renderCal(); }
+    } else {
+      const col = colOf(d.date); if (!col) return;
+      const b = slotIdx(col, e.clientY);
+      if (b !== d.b) { d.b = b; setTimedSel(d.date, d.a, b); renderCal(); }
+    }
   });
-  grid.addEventListener("pointerup", () => {
-    const d = S.selDrag; if (!d) return;
-    S.selDrag = null; d.col.classList.remove("selecting");
-    mouseSelDone = true;
-    editSel();
-  });
-  grid.addEventListener("pointercancel", () => { if (S.selDrag) { S.selDrag.col.classList.remove("selecting"); S.selDrag = null; cancelSel(); } });
+  function endPointer(cancel) {
+    grid.classList.remove("busy");
+    if (S.resize) {
+      const r = S.resize; S.resize = null; S.suppressClick = true;
+      const base = S.events.get(r.id);
+      if (!cancel && base && r.end !== r.orig) moveInstance(base, r.date, { end: r.end });
+      else renderCal();
+      return;
+    }
+    if (S.selDrag) {
+      S.selDrag = null;
+      if (cancel) { cancelSel(); return; }
+      S.suppressClick = true;
+      editSel();
+    }
+  }
+  grid.addEventListener("pointerup", () => endPointer(false));
+  grid.addEventListener("pointercancel", () => endPointer(true));
 
   grid.addEventListener("click", (e) => {
-    const ed = e.target.closest(".inline");
-    if (ed) {
-      if (e.target.closest(".ib-cat")) { S.sel.cat = S.sel.cat === "beruf" ? "privat" : "beruf"; renderSel(true); }
-      else if (e.target.closest(".ib-more")) selDetails();
+    if (S.suppressClick) { S.suppressClick = false; return; }
+    if (e.target.closest(".inline")) {
+      if (e.target.closest(".ib-more")) selDetails();
       else if (e.target.closest(".ib-ok")) commitSel();
       return;
     }
     const evEl = e.target.closest(".ev");
-    if (evEl) { const ev = S.events.get(evEl.dataset.id); if (ev) openEvent(ev); return; }
-    if (mouseSelDone) { mouseSelDone = false; return; }
-    // Touch: Tippen markiert 30 Minuten und öffnet die Eingabe
-    const col = e.target.closest(".g-col"); if (!col) return;
-    const a = slotIdx(col, e.clientY);
-    setSel(col.dataset.date, a, a);
-    editSel();
+    if (evEl) {
+      const ev = S.events.get(evEl.dataset.id);
+      if (ev) openEvent(ev, isRec(ev) ? evEl.dataset.date : null);
+      return;
+    }
+    // Touch: Tippen markiert 30 Minuten bzw. einen Tag und öffnet die Eingabe
+    const col = e.target.closest(".g-col"), cell = e.target.closest(".a-cell");
+    if (col) { const a = slotIdx(col, e.clientY); setTimedSel(col.dataset.date, a, a); editSel(); }
+    else if (cell) { setAllDaySel(cell.dataset.date, cell.dataset.date); editSel(); }
   });
   grid.addEventListener("dblclick", (e) => {
-    if (e.target.closest("input") || e.target.closest(".ev") || e.target.closest(".ib")) return;
+    if (e.target.closest("input, select, .ev, .ib")) return;
     if (S.sel) selDetails();
   });
   grid.addEventListener("input", (e) => { if (e.target.id === "inlineTitle" && S.sel) S.sel.text = e.target.value; });
+  grid.addEventListener("change", (e) => {
+    if (!e.target.classList.contains("ib-cat") || !S.sel) return;
+    S.sel.cat = e.target.value;
+    renderCal();
+    const i = $("inlineTitle"); if (i) i.focus();
+  });
   grid.addEventListener("keydown", (e) => {
     if (e.target.id !== "inlineTitle") return;
     if (e.key === "Enter") { e.preventDefault(); commitSel(); }
-    else if (e.key === "Escape") { e.preventDefault(); cancelSel(); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelSel(); }
   });
   // Klick außerhalb des Kalenders: Eingetipptes speichern, sonst Markierung verwerfen
   document.addEventListener("pointerdown", (e) => {
-    if (S.sel && !grid.contains(e.target) && !evDlg.open) commitSel();
+    if (S.sel && !e.composedPath().includes(grid) && !document.querySelector("dialog[open]")) commitSel();
   });
 
-  // ---------- Drag & Drop ----------
+  // ---------- Drag & Drop (Termine verschieben, To-dos einplanen) ----------
   let dropEl = null;
-  function clearDrop() { if (dropEl) dropEl.remove(); dropEl = null; }
+  function clearDrop() {
+    if (dropEl) dropEl.remove(); dropEl = null;
+    grid.querySelectorAll(".a-cell.over").forEach((c) => c.classList.remove("over"));
+  }
   grid.addEventListener("dragstart", (e) => {
+    if (S.resize || S.selDrag) { e.preventDefault(); return; }
     const evEl = e.target.closest(".ev"); if (!evEl) return;
     const ev = S.events.get(evEl.dataset.id); if (!ev) return;
-    const off = Math.floor((e.clientY - evEl.getBoundingClientRect().top) / SLOT) * STEP;
-    S.drag = { kind: "ev", id: ev.id, off: clamp(off, 0, ev.end - ev.start - STEP), dur: ev.end - ev.start };
+    const off = ev.allDay ? 0 : Math.floor((e.clientY - evEl.getBoundingClientRect().top) / SLOT) * STEP;
+    S.drag = { kind: "ev", id: ev.id, occDate: evEl.dataset.date, off: ev.allDay ? 0 : clamp(off, 0, ev.end - ev.start - STEP), dur: ev.allDay ? 60 : ev.end - ev.start };
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", ev.title);
     requestAnimationFrame(() => evEl.classList.add("dragging"));
@@ -823,31 +1376,49 @@ textarea.field { resize: vertical; min-height: 60px; }
     e.dataTransfer.effectAllowed = "copy";
     e.dataTransfer.setData("text/plain", S.todos.get(li.dataset.id)?.title || "");
   });
-  function dropStart(col, clientY) { return clamp(slotAt(col, clientY) - S.drag.off, START, END - S.drag.dur); }
+  const dropStart = (col, y) => clamp(START + slotIdx(col, y) * STEP - S.drag.off, START, END - S.drag.dur);
   grid.addEventListener("dragover", (e) => {
     if (!S.drag) return;
-    const col = e.target.closest(".g-col"); if (!col) return;
+    const col = e.target.closest(".g-col"), cell = e.target.closest(".a-cell") || (e.target.closest(".g-all") && null);
+    if (!col && !cell) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = S.drag.kind === "ev" ? "move" : "copy";
-    const start = dropStart(col, e.clientY);
-    if (!dropEl) { dropEl = document.createElement("div"); dropEl.className = "drop"; }
-    if (dropEl.parentNode !== col) col.appendChild(dropEl);
-    dropEl.style.top = (start - START) / STEP * SLOT + "px";
-    dropEl.style.height = S.drag.dur / STEP * SLOT + "px";
+    if (col) {
+      grid.querySelectorAll(".a-cell.over").forEach((c) => c.classList.remove("over"));
+      const start = dropStart(col, e.clientY);
+      if (!dropEl) { dropEl = document.createElement("div"); dropEl.className = "drop"; }
+      if (dropEl.parentNode !== col) col.appendChild(dropEl);
+      dropEl.style.top = (start - START) / STEP * SLOT + "px";
+      dropEl.style.height = S.drag.dur / STEP * SLOT + "px";
+    } else {
+      if (dropEl) { dropEl.remove(); dropEl = null; }
+      grid.querySelectorAll(".a-cell.over").forEach((c) => { if (c !== cell) c.classList.remove("over"); });
+      cell.classList.add("over");
+    }
   });
   grid.addEventListener("dragleave", (e) => { if (!grid.contains(e.relatedTarget)) clearDrop(); });
   grid.addEventListener("drop", (e) => {
-    const col = e.target.closest(".g-col");
-    if (!S.drag || !col) return;
+    if (!S.drag) return;
+    const col = e.target.closest(".g-col"), cell = e.target.closest(".a-cell");
+    if (!col && !cell) return;
     e.preventDefault();
-    const start = dropStart(col, e.clientY), date = col.dataset.date, d = S.drag;
+    const d = S.drag; const start = col ? dropStart(col, e.clientY) : null;
     clearDrop(); S.drag = null;
+    const date = (col || cell).dataset.date;
     if (d.kind === "ev") {
-      const ev = S.events.get(d.id);
-      if (ev) store.put("events", { ...ev, date, start, end: start + d.dur });
+      const ev = S.events.get(d.id); if (!ev) return;
+      let props;
+      if (col) props = { date, start, end: start + d.dur, allDay: false, endDate: null, status: ev.allDay && (ev.status || "free") === "free" ? "busy" : (ev.status || "busy") };
+      else {
+        const span = ev.allDay && !isRec(ev) ? dayDiff(ev.date, ev.endDate || ev.date) : 0;
+        props = { date, endDate: addDaysIso(date, span), allDay: true, start: null, end: null };
+      }
+      moveInstance(ev, d.occDate, props);
     } else {
-      const t = S.todos.get(d.id);
-      if (t) store.put("events", { id: uid(), title: t.title, date, start, end: start + d.dur, cat: t.cat || "beruf", note: "", todoId: t.id });
+      const t = S.todos.get(d.id); if (!t) return;
+      store.put("events", col
+        ? { id: uid(), title: t.title, allDay: false, date, start, end: start + d.dur, cat: t.cat || S.cats[0].id, status: "busy", location: "", note: "", todoId: t.id }
+        : { id: uid(), title: t.title, allDay: true, date, endDate: date, start: null, end: null, cat: t.cat || S.cats[0].id, status: "free", location: "", note: "", todoId: t.id });
     }
   });
   document.addEventListener("dragend", () => { clearDrop(); if (S.drag) { S.drag = null; render(); } });
@@ -856,6 +1427,8 @@ textarea.field { resize: vertical; min-height: 60px; }
   store.loadLocal();
   render();
   connect();
-  setInterval(() => { if (!S.drag && !S.selDrag && !evDlg.open && !tdDlg.open) renderCal(); }, 60000);
+  setInterval(() => {
+    if (!S.drag && !S.selDrag && !S.resize && !(S.sel && S.sel.editing) && !document.querySelector("dialog[open]")) renderCal();
+  }, 60000);
 })();
 </script>
