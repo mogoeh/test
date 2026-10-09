@@ -1,4 +1,15 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Produktivitätsplan</title>
+<meta name="theme-color" content="#1c2220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Wochenplan">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -40,7 +51,10 @@
 }
 
 * { box-sizing: border-box; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+[hidden] { display: none !important; }
 body {
+  margin: 0;
   background: var(--bg); color: var(--fg);
   font-family: var(--font-body); font-size: 15px; line-height: 1.4;
   padding-inline: 20px; padding-block: 16px 32px;
@@ -59,7 +73,7 @@ button { cursor: pointer; }
 .nbtn:hover { background: var(--sunk); }
 .jump { height: 34px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 5px; padding: 4px 8px; font-size: 13.5px; }
 .top-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-.sync { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.sync { border: 0; background: none; padding: 0; cursor: pointer; font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 .sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
 .sync[data-state="cloud"]::before { background: var(--c2); }
 .sync[data-state="local"]::before { background: var(--mark); }
@@ -298,6 +312,8 @@ textarea.field { resize: vertical; min-height: 60px; }
   .ev, .td, .btn { transition: background-color .12s, border-color .12s; }
 }
 </style>
+</head>
+<body>
 
 <div class="top">
   <div class="brand">
@@ -311,7 +327,7 @@ textarea.field { resize: vertical; min-height: 60px; }
     <input class="jump" type="date" id="jump" aria-label="Zu Datum springen" title="Zu Datum springen">
   </div>
   <div class="top-right">
-    <span class="sync" id="syncState" data-state="wait">Verbinde …</span>
+    <button type="button" class="sync" id="syncState" data-state="wait"></button>
     <button class="nbtn" id="openSettings" title="Kategorien & Datensicherung">Einstellungen</button>
   </div>
 </div>
@@ -449,7 +465,7 @@ textarea.field { resize: vertical; min-height: 60px; }
     </section>
     <section>
       <h4>Datensicherung</h4>
-      <p class="hint">Sichert alle Termine, To-dos, Wochenziele und Kategorien als Datei. Einspielen ergänzt bzw. überschreibt gleiche Einträge, löscht aber nichts.</p>
+      <p class="hint">Deine Daten liegen nur in diesem Browser auf diesem Gerät. Sichere sie regelmäßig als Datei (z.B. in OneDrive). Einspielen ergänzt bzw. überschreibt gleiche Einträge, löscht aber nichts. So bringst Du auch Daten vom PC aufs Handy.</p>
       <div class="flex">
         <button class="btn small" type="button" id="bkSave">Backup herunterladen</button>
         <label class="btn small" for="bkFile">Backup einspielen</label>
@@ -515,90 +531,63 @@ textarea.field { resize: vertical; min-height: 60px; }
   const catVar = (id) => `var(--${catOf(id).color})`;
   const weekKey = () => { const w = isoWeek(S.week); return `${w.year}-W${pad(w.week)}`; };
 
-  // ---------- Speicher: claude.ai-Datenbank (synchron) oder lokal ----------
-  const LS_KEY = "produktivitaetsplan.v1";
+  // ---------- Speicher: nur auf diesem Gerät (localStorage), Abgleich per Backup-Datei ----------
+  const LS_KEY = "produktivitaetsplan.v1", LS_BACKUP = "produktivitaetsplan.lastBackup";
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
   const store = {
-    base: null, cols: null, queue: new Map(),
     loadLocal() {
       try {
-        const raw = JSON.parse(localStorage.getItem(LS_KEY) || "null");
-        if (!raw) return;
-        S.events = new Map(Object.entries(raw.events || {}));
-        S.todos = new Map(Object.entries(raw.todos || {}));
-        S.weeks = new Map(Object.entries(raw.weeks || {}));
-        if (Array.isArray(raw.cats) && raw.cats.length) S.cats = raw.cats;
-      } catch (e) { /* kein Speicher verfügbar */ }
+        const raw = JSON.parse(lsGet(LS_KEY) || "null");
+        S.events = new Map(Object.entries((raw && raw.events) || {}));
+        S.todos = new Map(Object.entries((raw && raw.todos) || {}));
+        S.weeks = new Map(Object.entries((raw && raw.weeks) || {}));
+        S.cats = raw && Array.isArray(raw.cats) && raw.cats.length ? raw.cats : DEFAULT_CATS;
+      } catch (e) { /* beschädigte Daten: leer starten, nichts überschreiben */ }
     },
     saveLocal() {
-      if (this.cols) return;
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify({ events: Object.fromEntries(S.events), todos: Object.fromEntries(S.todos), weeks: Object.fromEntries(S.weeks), cats: S.cats }));
-      } catch (e) { /* ignorieren */ }
-    },
-    write(key, fn) {
-      // eine Schreiboperation pro Dokument gleichzeitig
-      const p = (this.queue.get(key) || Promise.resolve()).then(fn).catch((e) => {
-        toast(e && e.code === "quota_exceeded" ? "Speicher voll. Bitte alte Termine löschen." : "Speichern fehlgeschlagen. Bitte Seite neu laden.");
-      });
-      this.queue.set(key, p);
-      return p;
+      const ok = lsSet(LS_KEY, JSON.stringify({ events: Object.fromEntries(S.events), todos: Object.fromEntries(S.todos), weeks: Object.fromEntries(S.weeks), cats: S.cats }));
+      if (!ok) toast("Speichern fehlgeschlagen: Der Browser erlaubt keinen Speicher (privates Fenster?) oder er ist voll.");
+      renderBackupState();
     },
     put(kind, obj, silent) {
       obj = clean(obj);
       S[kind].set(obj.id, obj);
       if (!silent) render();
-      if (this.cols) return this.write(kind + "/" + obj.id, () => this.cols[kind].doc(obj.id).set(obj));
       this.saveLocal();
     },
     del(kind, id) {
       S[kind].delete(id);
       render();
-      if (this.cols) return this.write(kind + "/" + id, () => this.cols[kind].doc(id).delete());
       this.saveLocal();
     },
     putCats(cats) {
       S.cats = clean(cats);
       render();
-      if (this.base) return this.write("settings", () => this.base.set({ cats: S.cats }));
       this.saveLocal();
     },
   };
 
-  function setSync(state) {
+  // Backup-Hinweis oben rechts: erinnert, wenn länger nicht gesichert wurde
+  function renderBackupState() {
     const el = $("syncState");
-    el.dataset.state = state;
-    el.textContent = state === "cloud" ? "Synchronisiert" : state === "local" ? "Nur auf diesem Gerät" : "Verbinde …";
-    el.title = state === "cloud" ? "Daten liegen in Deinem privaten Bereich auf claude.ai und sind auf allen Geräten gleich." : state === "local" ? "Daten liegen nur im Speicher dieses Browsers." : "";
+    const last = +(lsGet(LS_BACKUP) || 0);
+    const hasData = S.events.size + S.todos.size > 0;
+    const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
+    const stale = hasData && (days === null || days >= 7);
+    el.dataset.state = stale ? "local" : "cloud";
+    el.textContent = !hasData ? "Auf diesem Gerät gespeichert"
+      : days === null ? "Noch kein Backup"
+      : days === 0 ? "Backup: heute" : days === 1 ? "Backup: gestern" : `Backup: vor ${days} Tagen`;
+    el.title = "Deine Daten liegen nur in diesem Browser auf diesem Gerät. Backup über „Einstellungen“.";
   }
 
-  let downloads = null;
-  async function connect() {
-    if (!window.claude || typeof window.claude.use !== "function") { setSync("local"); return; }
-    window.claude.use("downloads").then((d) => { downloads = d; }).catch(() => {});
-    try {
-      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
-      const id = db && user ? await user.id() : null;
-      if (!id) { setSync("local"); return; }
-      store.base = db.doc("data/users/" + id + "/planner");
-      store.cols = { events: store.base.collection("events"), todos: store.base.collection("todos"), weeks: store.base.collection("weeks") };
-      S.events = new Map(); S.todos = new Map(); S.weeks = new Map(); S.cats = DEFAULT_CATS;
-      render();
-      const onErr = () => { setSync("local"); toast("Verbindung zur Synchronisierung verloren. Bitte Seite neu laden."); };
-      const busy = () => S.drag || S.selDrag || S.resize;
-      for (const kind of ["events", "todos", "weeks"]) {
-        store.cols[kind].onSnapshot((snap) => {
-          S[kind] = new Map(snap.docs.map((d) => [d.id, d.data()]));
-          setSync("cloud");
-          if (!busy()) render();
-        }, onErr);
-      }
-      store.base.onSnapshot((snap) => {
-        const c = snap.exists && snap.data().cats;
-        S.cats = Array.isArray(c) && c.length ? c : DEFAULT_CATS;
-        if (!busy()) render();
-      }, onErr);
-    } catch (e) { setSync("local"); }
-  }
+  // Gleiche App in einem zweiten Tab/Fenster: Änderungen übernehmen
+  window.addEventListener("storage", (e) => {
+    if (e.key !== LS_KEY) return;
+    store.loadLocal();
+    if (!S.drag && !S.selDrag && !S.resize) render();
+  });
 
   // ---------- Toast (mit optionalem "Rückgängig") ----------
   let toastTimer;
@@ -1085,6 +1074,7 @@ textarea.field { resize: vertical; min-height: 60px; }
       <select class="field cc" aria-label="Farbe">${Object.entries(COLORS).map(([k, v]) => `<option value="${k}" ${k === c.color ? "selected" : ""}>${v}</option>`).join("")}</select>
       <button type="button" class="cdel" aria-label="Kategorie ${esc(c.name)} löschen" title="Löschen">✕</button></li>`).join("");
   }
+  $("syncState").addEventListener("click", () => $("openSettings").click());
   $("openSettings").addEventListener("click", () => {
     catDraft = S.cats.map((c) => ({ ...c }));
     renderCatList();
@@ -1120,12 +1110,17 @@ textarea.field { resize: vertical; min-height: 60px; }
     toast("Einstellungen gespeichert.");
   });
 
-  $("bkSave").addEventListener("click", async () => {
+  $("bkSave").addEventListener("click", () => {
     const data = JSON.stringify({ app: "produktivitaetsplan", version: 2, exportedAt: new Date().toISOString(),
       cats: S.cats, events: [...S.events.values()], todos: [...S.todos.values()], weeks: [...S.weeks.values()] }, null, 2);
-    if (!downloads) { $("setErr").textContent = "Herunterladen geht nur in der claude.ai-Ansicht dieser Seite."; return; }
-    try { await downloads.save({ filename: `produktivitaetsplan-${iso(new Date())}.json`, data }); }
-    catch (e) { if (e && e.code === "unavailable") $("setErr").textContent = "Herunterladen ist in dieser Ansicht nicht möglich."; }
+    const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `produktivitaetsplan-${iso(new Date())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    lsSet(LS_BACKUP, String(Date.now()));
+    renderBackupState();
+    toast("Backup gespeichert. Am besten in OneDrive o.ä. ablegen.");
   });
   $("bkFile").addEventListener("change", async (e) => {
     const f = e.target.files && e.target.files[0]; e.target.value = "";
@@ -1139,9 +1134,10 @@ textarea.field { resize: vertical; min-height: 60px; }
         const merged = [...S.cats]; for (const c of raw.cats) if (ok(c) && !merged.some((m) => m.id === c.id)) merged.push(c);
         store.putCats(merged);
       }
-      for (const x of evs) await store.put("events", x, true);
-      for (const x of tds) await store.put("todos", x, true);
-      for (const x of wks) await store.put("weeks", x, true);
+      for (const x of evs) S.events.set(x.id, x);
+      for (const x of tds) S.todos.set(x.id, x);
+      for (const x of wks) S.weeks.set(x.id, x);
+      store.saveLocal();
       render();
       setDlg.close();
       toast(`Eingespielt: ${evs.length} Termine, ${tds.length} To-dos, ${wks.length} Wochenziele.`);
@@ -1426,9 +1422,14 @@ textarea.field { resize: vertical; min-height: 60px; }
   // ---------- Start ----------
   store.loadLocal();
   render();
-  connect();
+  renderBackupState();
+  // Browser bitten, die Daten nicht automatisch zu löschen
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
   setInterval(() => {
     if (!S.drag && !S.selDrag && !S.resize && !(S.sel && S.sel.editing) && !document.querySelector("dialog[open]")) renderCal();
   }, 60000);
 })();
 </script>
+</body>
+</html>
