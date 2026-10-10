@@ -19,3 +19,5 @@ Sichern und Übertragen über **Einstellungen → Backup herunterladen / einspie
 - Verschieben per Drag & Drop, Dauer über die Unterkante, Duplizieren, Rückgängig
 - Wochenbilanz in Stunden je Kategorie, Wochenziele je KW
 - To-dos mit Priorität, Fälligkeit, Kategorie, Notiz, Filter; Einplanen per Ziehen oder Kalender-Symbol
+- **Erinnerungen** 15 Min. vorher (einstellbar) und bei Beginn: Hinweis in der App, Ton und Systemmeldung – nur solange die App geöffnet ist
+- **Export als .ics** je Termin (inkl. Serie und Erinnerungen) für Handy- oder Outlook-Kalender

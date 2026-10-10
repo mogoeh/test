@@ -290,6 +290,16 @@ textarea.field { resize: vertical; min-height: 60px; }
 .dlg section { display: grid; gap: 8px; padding-top: 4px; }
 
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 10px 8px 14px; border-radius: 6px; font-size: 14px; z-index: 50; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 12px; }
+.alerts { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; z-index: 60; display: grid; gap: 8px; width: min(340px, calc(100vw - 24px)); }
+.alert { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 10px 10px 14px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); cursor: pointer; overflow: hidden; }
+.alert::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c); }
+.alert .al-k { font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--c); }
+.alert .al-t { font-weight: 600; overflow-wrap: anywhere; }
+.alert .al-m { font-size: 13px; color: var(--muted); font-family: var(--font-mono); }
+.alert .al-x { grid-column: 2; grid-row: 1 / span 3; align-self: start; border: 0; background: none; color: var(--muted); font-size: 16px; padding: 0 2px; }
+.rem-state { font-size: 13px; color: var(--muted); }
+.rem-state.ok { color: var(--c2); }
+.rem-state.bad { color: var(--danger); }
 .toast button { border: 1px solid color-mix(in srgb, var(--bg) 40%, transparent); background: transparent; color: var(--bg); border-radius: 4px; padding: 3px 9px; font-weight: 600; font-size: 13px; }
 
 /* ---------- Handy ---------- */
@@ -427,6 +437,7 @@ textarea.field { resize: vertical; min-height: 60px; }
     <p class="err" id="evErr"></p>
     <div class="actions">
       <button class="btn danger" type="button" id="evDel">Löschen</button>
+      <button class="btn" type="button" id="evIcs" title="Termin mit Erinnerung in Handy- oder Outlook-Kalender übernehmen">In Kalender (.ics)</button>
       <button class="btn" type="button" id="evDup" title="Kopie mit gleichen Daten anlegen">Duplizieren</button>
       <button class="btn" type="button" id="evCancel">Abbrechen</button>
       <button class="btn primary" type="submit">Speichern</button>
@@ -462,6 +473,23 @@ textarea.field { resize: vertical; min-height: 60px; }
       <h4>Kategorien</h4>
       <ul class="catlist" id="catList"></ul>
       <div><button class="btn small" type="button" id="catAdd">+ Kategorie</button></div>
+    </section>
+    <section>
+      <h4>Erinnerungen <small style="text-transform:none;letter-spacing:0;font-weight:400">(gelten für dieses Gerät, sofort aktiv)</small></h4>
+      <label class="chkline"><input type="checkbox" id="remOn">Vor Terminen erinnern</label>
+      <div class="flex">
+        <label class="lbl">Vorlauf
+          <select class="field" id="remLead"><option value="5">5 Min. vorher</option><option value="10">10 Min. vorher</option><option value="15">15 Min. vorher</option><option value="30">30 Min. vorher</option><option value="60">1 Std. vorher</option></select>
+        </label>
+        <label class="chkline" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="remStart">Zusätzlich bei Beginn</label>
+      </div>
+      <label class="chkline"><input type="checkbox" id="remSound">Mit Ton</label>
+      <div class="flex" style="align-items:center">
+        <button class="btn small" type="button" id="remAllow">Benachrichtigungen erlauben</button>
+        <button class="btn small" type="button" id="remTest">Test</button>
+        <span class="rem-state" id="remState"></span>
+      </div>
+      <p class="hint">Erinnert nur, solange die App geöffnet ist (am PC reicht ein minimiertes Fenster). Für Erinnerungen bei geschlossener App: Termin öffnen → „In Kalender (.ics)“ übernimmt ihn mit Erinnerung in Deinen Handy- oder Outlook-Kalender.</p>
     </section>
     <section>
       <h4>Datensicherung</h4>
@@ -921,6 +949,7 @@ textarea.field { resize: vertical; min-height: 60px; }
     $("evErr").textContent = "";
     $("evDel").hidden = isNew; disarm($("evDel"));
     $("evDup").hidden = isNew;
+    $("evIcs").hidden = isNew;
     syncEvForm();
     evDlg.showModal();
     if (isNew) $("evTitle").focus();
@@ -1419,6 +1448,156 @@ textarea.field { resize: vertical; min-height: 60px; }
   });
   document.addEventListener("dragend", () => { clearDrop(); if (S.drag) { S.drag = null; render(); } });
 
+  // ---------- Erinnerungen ----------
+  const LS_REM = "produktivitaetsplan.reminders", LS_REM_SENT = "produktivitaetsplan.remSent", LS_REM_ASKED = "produktivitaetsplan.remAsked";
+  const rem = Object.assign({ on: true, lead: 15, atStart: true, sound: true }, (() => { try { return JSON.parse(lsGet(LS_REM) || "{}"); } catch (e) { return {}; } })());
+  const canNotify = () => "Notification" in window;
+  const saveRem = () => lsSet(LS_REM, JSON.stringify(rem));
+
+  function renderRemState() {
+    const el = $("remState"), allow = $("remAllow");
+    if (!canNotify()) { el.className = "rem-state"; el.textContent = "Nur Hinweise in der App (dieser Browser kann keine Systemmeldungen)."; allow.hidden = true; return; }
+    const p = Notification.permission;
+    allow.hidden = p === "granted";
+    el.className = "rem-state " + (p === "granted" ? "ok" : p === "denied" ? "bad" : "");
+    el.textContent = p === "granted" ? "Systemmeldungen erlaubt" : p === "denied" ? "Im Browser blockiert. Bitte in den Website-Einstellungen erlauben." : "Noch nicht erlaubt: nur Hinweise in der App";
+  }
+  async function askPermission() {
+    if (!canNotify()) return;
+    lsSet(LS_REM_ASKED, "1");
+    try { await Notification.requestPermission(); } catch (e) { /* ältere Browser */ }
+    renderRemState();
+  }
+
+  let audioCtx = null;
+  function beep() {
+    if (!rem.sound) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = audioCtx.currentTime;
+      [0, 0.22].forEach((d, i) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.frequency.value = i ? 1046 : 784; o.type = "sine";
+        g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(0.25, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.18);
+        o.connect(g).connect(audioCtx.destination); o.start(t + d); o.stop(t + d + 0.2);
+      });
+    } catch (e) { /* Ton nicht erlaubt */ }
+  }
+
+  function showAlert(ev, date, kind, title, body) {
+    let box = document.querySelector(".alerts");
+    if (!box) { box = document.createElement("div"); box.className = "alerts"; box.setAttribute("role", "alert"); document.body.appendChild(box); }
+    const el = document.createElement("div");
+    el.className = "alert"; el.style.setProperty("--c", ev ? catVar(ev.cat) : "var(--c1)");
+    if (ev) { el.dataset.key = ev.id + "@" + date; box.querySelectorAll(`.alert[data-key="${CSS.escape(el.dataset.key)}"]`).forEach((x) => x.remove()); }
+    el.innerHTML = `<span class="al-k">${esc(kind)}</span><button type="button" class="al-x" aria-label="Schließen">✕</button><span class="al-t">${esc(title)}</span><span class="al-m">${esc(body)}</span>`;
+    el.addEventListener("click", (e) => {
+      el.remove();
+      if (e.target.closest(".al-x") || !ev) return;
+      const d = parse(date); S.week = mondayOf(d); S.day = (d.getDay() + 6) % 7; render();
+      const cur = S.events.get(ev.id); if (cur) openEvent(cur, isRec(cur) ? date : null);
+    });
+    box.prepend(el);
+    while (box.children.length > 4) box.lastChild.remove();
+  }
+
+  async function notify(ev, date, kind, title, body, tag) {
+    showAlert(ev, date, kind, title, body);
+    beep();
+    if (!canNotify() || Notification.permission !== "granted") return;
+    const opts = { body, tag, icon: "icon-192.png", badge: "icon-192.png", renotify: true, data: { date, id: ev && ev.id } };
+    try {
+      const reg = "serviceWorker" in navigator && navigator.serviceWorker.controller ? await navigator.serviceWorker.ready : null;
+      if (reg) await reg.showNotification(title, opts);
+      else new Notification(title, opts);
+    } catch (e) { /* Systemmeldung nicht möglich, In-App-Hinweis reicht */ }
+  }
+
+  function checkReminders() {
+    if (!rem.on) return;
+    const now = new Date(), ds = iso(now), nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+    let sent = {};
+    try { sent = JSON.parse(lsGet(LS_REM_SENT) || "{}"); } catch (e) { sent = {}; }
+    for (const k of Object.keys(sent)) if (!k.includes("@" + ds + "@")) delete sent[k]; // nur heute merken
+    let changed = false;
+    const fire = (ev, kind, key, title, body) => {
+      if (sent[key]) return;
+      sent[key] = Date.now(); changed = true;
+      notify(ev, ds, kind, title, body, key);
+    };
+    for (const ev of S.events.values()) {
+      if (ev.allDay || !occursOn(ev, ds)) continue;
+      const toStart = ev.start - nowMin;
+      const body = `${hm(ev.start)}–${hm(ev.end)}${ev.location ? " · " + ev.location : ""}`;
+      if (toStart > 0 && toStart <= rem.lead) {
+        const m = Math.ceil(toStart);
+        fire(ev, `in ${m} Min.`, `${ev.id}@${ds}@pre`, `In ${m} Min.: ${ev.title}`, body);
+      }
+      if (rem.atStart && toStart <= 0 && toStart > -5) fire(ev, "jetzt", `${ev.id}@${ds}@start`, `Jetzt: ${ev.title}`, body);
+    }
+    // schon gesendet, wenn dieselbe Erinnerung parallel in einem anderen Fenster kam
+    if (changed) lsSet(LS_REM_SENT, JSON.stringify(sent));
+  }
+
+  // Einstellungen verdrahten (wirken sofort)
+  function fillRem() {
+    $("remOn").checked = rem.on; $("remLead").value = String(rem.lead); $("remStart").checked = rem.atStart; $("remSound").checked = rem.sound;
+    renderRemState();
+  }
+  $("remOn").addEventListener("change", (e) => { rem.on = e.target.checked; saveRem(); });
+  $("remLead").addEventListener("change", (e) => { rem.lead = +e.target.value; saveRem(); });
+  $("remStart").addEventListener("change", (e) => { rem.atStart = e.target.checked; saveRem(); });
+  $("remSound").addEventListener("change", (e) => { rem.sound = e.target.checked; saveRem(); if (rem.sound) beep(); });
+  $("remAllow").addEventListener("click", askPermission);
+  $("remTest").addEventListener("click", () => {
+    notify(null, iso(new Date()), "Test", "So sieht eine Erinnerung aus", `${rem.lead} Min. vorher${rem.atStart ? " und bei Beginn" : ""}`, "test-" + Date.now());
+  });
+  $("openSettings").addEventListener("click", fillRem);
+
+  // ---------- Export in Gerätekalender (.ics) ----------
+  function icsFor(ev) {
+    const pad8 = (s) => s.replace(/-/g, "");
+    const dt = (date, min) => `${pad8(date)}T${pad(Math.floor(min / 60))}${pad(min % 60)}00`;
+    const txt = (v) => String(v || "").replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+    const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Produktivitaetsplan//DE", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      `UID:${ev.id}@produktivitaetsplan`, `DTSTAMP:${stamp}`, `SUMMARY:${txt(ev.title)}`];
+    if (ev.allDay) {
+      L.push(`DTSTART;VALUE=DATE:${pad8(ev.date)}`, `DTEND;VALUE=DATE:${pad8(addDaysIso(ev.endDate || ev.date, 1))}`);
+    } else {
+      L.push(`DTSTART:${dt(ev.date, ev.start)}`, `DTEND:${dt(ev.date, ev.end)}`);
+    }
+    if (ev.location) L.push(`LOCATION:${txt(ev.location)}`);
+    const desc = [catOf(ev.cat).name, ev.note].filter(Boolean).join("\n");
+    if (desc) L.push(`DESCRIPTION:${txt(desc)}`);
+    const st = ev.status || (ev.allDay ? "free" : "busy");
+    if (st === "tentative") L.push("STATUS:TENTATIVE");
+    L.push(`TRANSP:${st === "free" ? "TRANSPARENT" : "OPAQUE"}`);
+    L.push(`X-MICROSOFT-CDO-BUSYSTATUS:${{ busy: "BUSY", tentative: "TENTATIVE", oof: "OOF", elsewhere: "WORKINGELSEWHERE", free: "FREE" }[st]}`);
+    if (isRec(ev)) {
+      const r = ev.rec;
+      let rule = { daily: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR", weekly: "FREQ=WEEKLY", biweekly: "FREQ=WEEKLY;INTERVAL=2", monthly: "FREQ=MONTHLY" }[r.freq];
+      if (r.until) rule += `;UNTIL=${pad8(r.until)}${ev.allDay ? "" : "T235959"}`;
+      L.push(`RRULE:${rule}`);
+      for (const x of r.ex || []) L.push(ev.allDay ? `EXDATE;VALUE=DATE:${pad8(x)}` : `EXDATE:${dt(x, ev.start)}`);
+    }
+    if (!ev.allDay) {
+      L.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${txt(ev.title)}`, `TRIGGER:-PT${rem.lead}M`, "END:VALARM");
+      if (rem.atStart) L.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${txt(ev.title)}`, "TRIGGER:PT0M", "END:VALARM");
+    }
+    L.push("END:VEVENT", "END:VCALENDAR");
+    return L.join("\r\n") + "\r\n";
+  }
+  $("evIcs").addEventListener("click", () => {
+    const ev = editing && editing.id && S.events.get(editing.id); if (!ev) return;
+    const url = URL.createObjectURL(new Blob([icsFor(ev)], { type: "text/calendar" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = (ev.title.replace(/[^\wäöüÄÖÜß -]/g, "").trim() || "termin") + ".ics";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast("Kalenderdatei erstellt. Öffnen, um sie in den Kalender zu übernehmen. Gespeichert ist der zuletzt gesicherte Stand.");
+  });
+
   // ---------- Start ----------
   store.loadLocal();
   render();
@@ -1426,6 +1605,13 @@ textarea.field { resize: vertical; min-height: 60px; }
   // Browser bitten, die Daten nicht automatisch zu löschen
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
+  // Einmalig fragen, ob Systemmeldungen erlaubt werden sollen (Klick = nötige Nutzeraktion)
+  if (rem.on && canNotify() && Notification.permission === "default" && !lsGet(LS_REM_ASKED)) {
+    setTimeout(() => toast(`Erinnerung ${rem.lead} Min. vor Terminen als Systemmeldung?`, { label: "Erlauben", fn: askPermission }), 1500);
+  }
+  checkReminders();
+  setInterval(checkReminders, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { checkReminders(); renderCal(); } });
   setInterval(() => {
     if (!S.drag && !S.selDrag && !S.resize && !(S.sel && S.sel.editing) && !document.querySelector("dialog[open]")) renderCal();
   }, 60000);

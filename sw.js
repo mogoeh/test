@@ -1,6 +1,6 @@
 // Offline-Betrieb: App-Dateien und Schriften zwischenspeichern.
 // Bei jeder Änderung an der App VERSION hochzählen, damit Geräte die neue Fassung laden.
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = "produktivitaetsplan-" + VERSION;
 const APP = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
 
@@ -35,4 +35,15 @@ self.addEventListener("fetch", (e) => {
       caches.match(req).then((hit) => hit || fetch(req).then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res; }))
     );
   }
+});
+
+// Klick auf eine Erinnerung: App in den Vordergrund holen bzw. öffnen
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      const open = list.find((c) => "focus" in c);
+      return open ? open.focus() : self.clients.openWindow("./");
+    })
+  );
 });
